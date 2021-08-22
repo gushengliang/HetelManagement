@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>员工主页</title>
+    <!-- 引入样式 -->
+    <!--<link rel="stylesheet" href="css/index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="js/vue.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/axios.js"></script>
+    <script src="js/qs.js"></script>
+    <link rel="stylesheet" href="css/main.css">
+    <!--<style>
+        .app {
+            margin: 15% 15% 15% 15%;
+        }
+
+        .el-header {
+            background-color: #2577E3;
+            color: #FFFFFF;
+            text-align: left;
+            line-height: 60px;
+        }
+
+        .el-footer {
+            background-color: #FFFFFF;
+            color: #000000;
+            text-align: right;
+            line-height: 60px;
+        }
+
+        .el-aside,
+        .el-menu {
+            background-color: #FFFFFF;
+            color: #333;
+            text-align: center;
+        }
+
+        .el-main {
+            background-color: #F6F6F6;
+            color: #333;
+        }
+
+
+    </style>-->
+</head>
+<body>
+<div id="app">
+    <el-container>
+        <el-header>
+            <span class="el-icon-office-building" style="font-size: x-large">
+                基于自动化的酒店管理系统
+            </span>
+        </el-header>
+        <span
+                id="cg"
+                style="text-align: right;background-color: #2577E3;color: #FFFFFF;">
+            time
+        </span>
+        <el-container>
+            <el-aside width="200px">
+                <el-menu :default-active="currentMenu" class="el-menu-vertical-demo" @select="handleSelect">
+                    <div>
+                        <p style="font-weight: bold">欢迎您，员工</p>
+                        <el-avatar>{{loginInfo.name}}</el-avatar>
+                        <br>
+                        <span style="display: block">用户名：{{loginInfo.name}}</span>
+                        <br>
+                        <el-link type="primary" @click="handleChange">修改密码</el-link>
+                        <br>
+                        <el-link type="danger" @click="logout">退出登录</el-link>
+                        <br>
+                    </div>
+                    <!--<el-menu-item v-for="(menu,i) in menus" :key="i" :index="menu.index">
+                        <i :class="menu.icon"></i>
+                        <span slot="title">{{(menu.title)}}</span>
+                    </el-menu-item>-->
+                </el-menu>
+            </el-aside>
+            <el-container>
+                <el-main>
+                    <template>
+                        <div ref="selection1">
+                            <el-tabs v-model="activeName" type="border-card" @tab-click="handleClick">
+                                <el-tab-pane label="房间管理" name="first">
+                                    <iframe
+                                            id="room_management"
+                                            frameborder="0"
+                                            width="100%"
+                                            onload="changeFrameHeight('room_management')"
+                                            src="room_list.html">
+                                    </iframe>
+                                </el-tab-pane>
+                                <el-tab-pane label="设施管理" name="second">
+                                <iframe
+                                        id="facility_management"
+                                        frameborder="0"
+                                        width="100%"
+                                        onload="changeFrameHeight('facility_management')"
+                                        src="facility_list.html">
+                                </iframe>
+                            </el-tab-pane>
+<!--                            <el-tab-pane label="财务统计" name="third">-->
+<!--                                <iframe-->
+<!--                                        id="caiwu_management"-->
+<!--                                        frameborder="0"-->
+<!--                                        width="100%"-->
+<!--                                        onload="changeFrameHeight('caiwu_management')"-->
+<!--                                        src="caiwu_list.html">-->
+<!--                                </iframe>-->
+<!--                            </el-tab-pane>-->
+                                <!--<el-tab-pane label="财务统计" name="third">
+                                    <iframe
+                                            id="caiwu_management"
+                                            frameborder="0"
+                                            width="100%"
+                                            onload="changeFrameHeight('caiwu_management')"
+                                            src="caiwu_regist.html">
+                                    </iframe>
+                                </el-tab-pane>
+                                <el-tab-pane label="理赔管理" name="fourth">
+                                    <iframe
+                                            id="compensate_management"
+                                            frameborder="0"
+                                            width="100%"
+                                            onload="changeFrameHeight('compensate_management')"
+                                            src="compensate_list.html">
+                                    </iframe>
+                                </el-tab-pane>-->
+                            </el-tabs>
+                        </div>
+                    </template>
+                    <!--<template>
+                        <div ref="selection2">
+                            <el-card shadow="hover">
+                                <div slot="header" class="clear fix">
+                                    <h3>用户信息</h3>
+                                </div>
+                                <div class="text item">
+                                    <span>用户名</span>
+                                    <el-input placeholder="请输入用户名" v-model="loginInfo.id" style="width: 300px;"
+                                              readonly>
+                                    </el-input>
+                                </div>
+                                <div class="text item">
+                                    <span>昵&nbsp;&nbsp;&nbsp;称</span>
+                                    <el-input placeholder="请输入昵称" v-model="loginInfo.name" style="width: 300px;"
+                                              readonly>
+                                    </el-input>
+                                </div>
+                                <hr>
+                                <div>
+                                    <el-button type="primary" @click="handleEdit" plain>编辑资料</el-button>
+                                    <el-button type="danger" @click="logout" plain>退出登录</el-button>
+                                </div>
+                            </el-card>
+                        </div>
+
+                        &lt;!&ndash;编辑资料弹窗&ndash;&gt;
+                        <el-dialog
+                                :visible.sync="dialogEditVisible"
+                                :before-close="handleCloseEditDialog">
+                            <el-form ref="editRuleForm" :model="loginInfo" :rules="editRules">
+                                <el-form-item label="用户名（不可修改）" prop="id">
+                                    <el-input placeholder="请输入用户名" v-model="loginInfo.id" readonly>
+                                    </el-input>
+                                </el-form-item>
+                                <el-form-item label="昵称" prop="name">
+                                    <el-input placeholder="请输入昵称" v-model="loginInfo.name">
+                                    </el-input>
+                                </el-form-item>
+                                <el-form-item>
+                                    <el-button type="primary" @click="onSubmitEdit('editRuleForm')" plain>确定</el-button>
+                                    <el-button type="info" @click="handleCloseEditDialog" plain>取消</el-button>
+                                </el-form-item>
+                            </el-form>
+                        </el-dialog>
+
+
+                    </template>-->
+                    <!--<template>
+                        <div ref="selection3">
+
+                        </div>
+                    </template>-->
+                    <!--修改密码弹窗-->
+                    <el-dialog
+                            :visible.sync="dialogChangeVisible"
+                            :before-close="handleCloseChangeDialog">
+                        <el-form ref="changeRuleForm" :model="changePassword" :rules="changeRules">
+                            <el-form-item label="当前密码" prop="currentPassword">
+                                <el-input type="password" placeholder="请输入当前密码"
+                                          v-model="changePassword.currentPassword">
+                                </el-input>
+                            </el-form-item>
+                            <el-form-item label="新密码" prop="newPassword">
+                                <el-input type="password" placeholder="请输入新密码" v-model="changePassword.newPassword">
+                                </el-input>
+                            </el-form-item>
+                            <el-form-item label="重复新密码" prop="replyNewPassword">
+                                <el-input type="password" placeholder="请重复输入新密码"
+                                          v-model="changePassword.replyNewPassword">
+                                </el-input>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="onSubmitChange('changeRuleForm')" plain>确定
+                                </el-button>
+                                <el-button type="info" @click="handleCloseChangeDialog" plain>取消</el-button>
+                            </el-form-item>
+                        </el-form>
+                    </el-dialog>
+                </el-main>
+                <el-footer>
+                    <span style="text-align: right">version:1.0</span>
+                </el-footer>
+            </el-container>
+        </el-container>
+    </el-container>
+</div>
+</body>
+<script>
+
+    function changeFrameHeight(id){
+        let ifm= document.getElementById(id);
+        ifm.height=document.documentElement.clientHeight;
+        //ifm.height=document.documentElement.offsetHeight;
+        /*ifm.height = ( ifm.contentDocument && ifm.contentDocument.body.offsetHeight ) ||
+            ( ifm.contentWindow.document.body.scrollHeight );*/
+    }
+
+    window.onresize=function(){
+        changeFrameHeight();
+    }
+
+    let Main = {
+        data() {
+            //检验当前密码是否正确
+            let checkCurrentPassword = (rule, value, callback) => {
+                if(value !== this.loginInfo.password) {
+                    callback(new Error('密码错误'));
+                } else {
+                    callback();
+                }
+            }
+
+            //检测两次密码是否相等
+            let checkReplyNewPassword = (rule, value, callback) => {
+                if (value !== this.changePassword.newPassword) {
+                    callback(new Error('两次密码不一致'));
+                } else {
+                    callback();
+                }
+            }
+
+            return {
+                dialogEditVisible: false,
+                dialogChangeVisible: false,
+                currentMenu: '1',
+                activeName: 'first',
+                seen: false,
+                menus: [],  //菜单项
+                loginInfo: [], //个人登录信息
+                changePassword: {
+                    currentPassword: '',
+                    newPassword: '',
+                    replyNewPassword: '',
+                },
+                editRules: {
+
+                },
+                changeRules: {
+                    currentPassword: [
+                        {
+                            required: true,
+                            message: '密码不能为空',
+                            trigger: 'blur'
+                        },
+                        {
+                            validator: checkCurrentPassword,
+                            trigger: 'blur'
+                        }
+                    ],
+                    newPassword: [
+                        {
+                            required: true,
+                            message: '密码不能为空',
+                            trigger: 'blur'
+                        },
+                        {
+                            min: 6,
+                            max: 12,
+                            message: '密码长度为6-12个字符',
+                            trigger: 'blur'
+                        }
+                    ],
+                    replyNewPassword: [
+                        {
+                            required: true,
+                            message: '密码不能为空',
+                            trigger: 'blur'
+                        },
+                        {
+                            validator: checkReplyNewPassword,
+                            trigger: 'blur'
+                        }
+                    ]
+                },
+                menus: [
+                    {
+                        index: '1',
+                        title: '管理',
+                        path: 'dept_list.html',
+                        icon: 'el-icon-menu',
+                        show: true
+                    },
+                    /*{
+                        index: '2',
+                        title: '个人',
+                        path: 'dept_regist.html',
+                        icon: 'el-icon-key',
+                        show: true
+                    },*/
+                    /*{
+                        index: '3',
+                        title: '设置',
+                        path: 'emp_list.html',
+                        icon: 'el-icon-setting',
+                        show: false,
+                    },*/
+                ],
+            }
+        },
+        mounted() {
+            //初始化个人登录信息
+            this.getLoginInfo();
+            //初始化显示界面
+            this.showData();
+        },
+        methods: {
+            //获取个人信息
+            getLoginInfo() {
+                axios.get("staff?action=getLoginInfo")
+                    .then((res) => {
+                        if (res.data.code === 0) {
+                            this.loginInfo = res.data.data;
+                        } else if (res.data.code === 403) {
+                            this.$alert('用户身份信息已过期...点击确定按钮跳回登录界面', '提示', {
+                                confirmButtonText: '确定',
+                                callback: action => {
+                                    //parent.location.reload();
+                                    //location.href = 'login.html';
+                                    location.reload();
+                                }
+                            });
+                        }
+                    })
+            },
+
+            //切换标签
+            handleClick(tab, event) {
+                console.log(tab, event);
+                //console.log(this.activeName)
+                //this.getData()
+            },
+
+            showData() {
+                console.log(this.$refs.selection1);
+                if (this.currentMenu === '1') {
+                    this.$refs.selection1.style.display = 'block';
+                    this.$refs.selection2.style.display = 'none';
+                    this.$refs.selection3.style.display = 'none';
+                } else if (this.currentMenu === '2') {
+                    this.$refs.selection1.style.display = 'none';
+                    this.$refs.selection2.style.display = 'block';
+                    this.$refs.selection3.style.display = 'none';
+                } else if (this.currentMenu === '3') {
+                    this.$refs.selection1.style.display = 'none';
+                    this.$refs.selection2.style.display = 'none';
+                    this.$refs.selection3.style.display = 'block';
+                }
+
+            },
+            //退出登录
+            logout() {
+                this.$confirm('确定注销?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                })
+                    .then(() => {
+                        axios.get("index?action=logout")
+                            .then((res) => {
+                                if (res.data.code === 0) {
+                                    this.$alert('注销成功...点击确定按钮跳回登录界面', '提示', {
+                                        confirmButtonText: '确定',
+                                        callback: action => {
+                                            //parent.location.reload();
+                                            location.href = 'login.html';
+                                        }
+                                    });
+                                } else if (res.data.code === 440) {
+                                    this.$alert("注销失败...");
+                                } else {
+                                    location.href = "error.html";
+                                }
+                            })
+                    })
+            },
+
+            //选择MenuItem事件
+            handleSelect(index, indexPath) {
+                this.currentMenu = index;
+                this.showData();
+            },
+
+            //打开编辑资料弹窗
+            handleEdit() {
+                this.dialogEditVisible = true;
+            },
+
+            //打开修改密码弹窗
+            handleChange() {
+                this.dialogChangeVisible = true;
+            },
+
+            //提交编辑资料
+            onSubmitEdit(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        axios.get("index?action=login", {params: this.loginRuleForm})
+                            .then((res) => {
+                            })
+                    } else {
+                        console.log('error submit!!');
+                        return false;
+                    }
+                });
+            },
+
+            //提交修改密码
+            onSubmitChange(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        axios.get("index?action=changePassword", {
+                            params:{
+                                userId: this.loginInfo.id,
+                                //currentPassword: this.changePassword.currentPassword,
+                                newPassword: this.changePassword.newPassword,
+                                type: this.loginInfo.type,
+                            }})
+                            .then((res) => {
+                                if(res.data.code === 0) {
+                                    this.$alert('密码修改成功...点击确定按钮跳回登录界面', '提示', {
+                                        confirmButtonText: '确定',
+                                        callback: action => {
+                                            //parent.location.reload();
+                                            location.href = 'login.html';
+                                        }
+                                    });
+                                } else if(res.data.code === 450) {
+                                    this.$alert("密码修改失败...");
+                                } else {
+                                    location.href = "error.html";
+                                }
+                            })
+                    } else {
+                        console.log('error submit!!');
+                        return false;
+                    }
+                });
+            },
+
+            //关闭编辑资料弹窗
+            handleCloseEditDialog() {
+                this.dialogEditVisible = false;
+            },
+
+            //关闭修改密码弹窗
+            handleCloseChangeDialog() {
+                this.dialogChangeVisible = false;
+            }
+        }
+    }
+    setInterval("cg.innerHTML=new Date().toLocaleString()",1000)
+    let Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>
+</html>

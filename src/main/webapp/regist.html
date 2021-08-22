@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>客户注册</title>
+    <!-- 引入样式 -->
+    <!--<link rel="stylesheet" href="css/index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="js/vue.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/axios.js"></script>
+    <script src="js/qs.js"></script>
+</head>
+<body>
+<div id="app">
+    <div style="margin: 10px 0;">
+        <el-form ref="ruleForm" :model="ruleForm" :rules="rules" label-width="100px">
+            <!--用户名-->
+            <el-form-item label="用户名" prop="userName">
+                <el-input v-model="ruleForm.userName"></el-input>
+            </el-form-item>
+            <!--姓名-->
+            <!--<el-form-item label="姓名" prop="name">
+                <el-input v-model="user.name"></el-input>
+            </el-form-item>-->
+            <!--密码-->
+            <el-form-item label="密码" prop="password">
+                <el-input type="password" v-model="ruleForm.password"></el-input>
+            </el-form-item>
+            <!--重复密码-->
+            <el-form-item label="重复密码" prop="replyPassword">
+                <el-input type="password" v-model="ruleForm.replyPassword"></el-input>
+            </el-form-item>
+            <el-form-item label="电话号码" prop="telNumber">
+                <el-input v-model="ruleForm.telNumber"></el-input>
+            </el-form-item>
+            <!--<el-form-item label="用户类型">
+                <el-select v-model="user.type" placeholder="请选择" style="width: 480px">
+                    <el-option v-for="item in registOptions" :key="item.value" :label="item.text"
+                               :value="item.value">
+                    </el-option>
+                </el-select>
+            </el-form-item>-->
+            <el-form-item>
+                <el-button type="primary" @click="onSubmitRegist('ruleForm')">注册</el-button>
+                <el-button>取消</el-button>
+                <el-link type="primary"></el-link>
+            </el-form-item>
+        </el-form>
+    </div>
+</div>
+</body>
+<script>
+    let Main = {
+        data() {
+            //检验用户名是否已存在
+            let checkUsername = (rule, value, callback) => {
+                axios.get('customer?action=isExist', {
+                    params: {
+                        'customerId': value,
+                    }
+                }).then((res) => {
+                    if(res.data.code === 501) {
+                        callback(new Error('该用户名已存在'));
+                    } else if(res.data.code === 500) {
+                        location.href = '../error.html';
+                        //callback(new Error(value + '部门已经存在!'));
+                    }
+                    callback();
+                })
+            }
+            //检测两次密码是否相等
+            let checkReplPassword = (rule, value, callback) => {
+                if (value !== this.user.password) {
+                    callback(new Error('两次密码不一致'));
+                } else {
+                    callback();
+                }
+            }
+            return {
+                ruleForm: {
+                    username: '',
+                    password: '',
+                    replyPassword: '',
+                    telNumber: '',
+                },
+                rules: {
+                    userName: [
+                        {
+                            required: true,
+                            message: '用户名不能为空',
+                            trigger: 'blur'
+                        },
+                        /*{
+                            pattern: '^[A-Za-z][A-Za-z0-9_]+$',
+                            message: '用户名以字母开头，包含字母、数字和下划线',
+                            trigger: 'blur'
+                        },*/
+                        {
+                            min: 2,
+                            max: 16,
+                            message: '用户名长度为2-16个字符',
+                            trigger: 'blur'
+                        },
+                        {
+                            validator: checkUsername,
+                            trigger: 'blur'
+                        }
+                    ],
+                    password: [{
+                        required: true,
+                        message: '密码不能为空',
+                        trigger: 'blur'
+                    },
+                        /*{
+                            pattern: '[A-Z]+',
+                            message: '密码必须包含大写字母',
+                            trigger: 'blur'
+                        },*/
+                        {
+                            min: 6,
+                            max: 12,
+                            message: '密码长度为6-12个字符',
+                            trigger: 'blur'
+                        }
+                    ],
+                    replPassword: [
+                        {
+                            validator: checkReplPassword,
+                            trigger: 'blur'
+                        }
+                    ],
+                    telNumber: [
+                        {
+                            required: true,
+                            trigger: 'blur'
+                        }
+                    ],
+
+                },
+            }
+        },
+        mounted() {
+
+        },
+        methods: {
+            onSubmitRegist(formName) {
+            }
+        }
+    }
+    let Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>
+</html>

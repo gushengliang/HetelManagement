@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+    <!-- 引入样式 -->
+    <!--<link rel="stylesheet" href="css/index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="js/vue.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/axios.js"></script>
+    <script src="js/qs.js"></script>
+    <link rel="stylesheet" href="css/main.css">
+    <!--<script type="text/javascript">
+        //页面跳出框架
+        if (top.location !== self.location) {
+            top.location=self.location;
+        }
+    </script>-->
+</head>
+
+<body>
+<div id="app">
+    <el-container>
+        <el-header>
+            <!--<i class="el-icon-office-building"></i>-->
+            <span class="el-icon-office-building" style="font-size: x-large">
+                基于自动化的酒店管理系统
+            </span>
+        </el-header>
+        <span
+                id="cg"
+                style="text-align: right;background-color: #2577E3;color: #FFFFFF;">
+            time
+        </span>
+        <el-container>
+            <el-aside height="2000px" width=1000px">
+                <el-image style="width: 1000px; height:550px" :src="src">
+                </el-image>
+            </el-aside>
+            <el-main>
+                <el-form ref="loginRuleForm" :model="loginRuleForm" :rules="loginRules" label-width="100px">
+                    <!--用户名-->
+                    <el-form-item label="用户名" prop="userName">
+                        <el-input v-model="loginRuleForm.userName" placeholder="请输入用户名" style="width: 80%;"></el-input>
+                    </el-form-item>
+                    <!--密码-->
+                    <el-form-item label="密码" prop="password">
+                        <el-input type="password" v-model="loginRuleForm.password" placeholder="请输入密码" style="width: 80%;"></el-input>
+                    </el-form-item>
+                    <el-form-item label="用户类型" prop="type">
+                        <el-select
+                                v-model="loginRuleForm.type"
+                                placeholder="请选择用户类型"
+                                style="width: 80%;">
+                            <el-option
+                                    v-for="item in loginOptions"
+                                    :key="item.value"
+                                    :label="item.text"
+                                    :value="item.value">
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button type="primary" @click="onSubmitLogin('loginRuleForm')">登录</el-button>
+                        <el-button type="info" @click="handleRegist">用户注册</el-button>
+                    </el-form-item>
+<!--                    <el-form-item>-->
+<!--                        <el-link type="primary" @click="dialogResetVisible = true">忘记密码</el-link>-->
+<!--                    </el-form-item>-->
+                </el-form>
+            </el-main>
+        </el-container>
+        <el-footer>
+            <p style="text-align: right">version:1.0</p>
+        </el-footer>
+    </el-container>
+
+    <template>
+        <el-dialog
+                :visible.sync="dialogVisible"
+                :before-close="handleCloseDialog">
+            <el-form ref="registRuleForm" :model="registRuleForm" :rules="registRules" label-width="100px">
+                <p>
+                <h2>用户注册</h2></p>
+                <!--用户名-->
+                <el-form-item label="用户名" prop="userId">
+                    <el-input v-model="registRuleForm.userId"></el-input>
+                </el-form-item>
+                <!--姓名-->
+                <el-form-item label="姓名" prop="userName">
+                    <el-input v-model="registRuleForm.userName"></el-input>
+                </el-form-item>
+                <!--密码-->
+                <el-form-item label="密码" prop="password">
+                    <el-input type="password" v-model="registRuleForm.password"></el-input>
+                </el-form-item>
+                <!--重复密码-->
+                <el-form-item label="重复密码" prop="replyPassword">
+                    <el-input type="password" v-model="registRuleForm.replyPassword"></el-input>
+                </el-form-item>
+                <el-form-item label="联系电话" prop="telNumber">
+                    <el-input v-model="registRuleForm.telNumber"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="onSubmitRegist('registRuleForm')">注册</el-button>
+                    <el-button @click="handleCloseDialog">取消</el-button>
+                    <el-link type="primary"></el-link>
+                </el-form-item>
+            </el-form>
+        </el-dialog>
+    </template>
+
+    <el-dialog
+            title="重置密码提示"
+            :visible.sync="dialogResetVisible"
+            width="30%">
+        <span>请联系管理员杨诗文重置密码！</span>
+        <span slot="footer" class="dialog-footer">
+    <el-button type="primary" @click="dialogResetVisible = false">确 定</el-button>
+  </span>
+    </el-dialog>
+</div>
+</body>
+<script>
+    let Main = {
+        data() {
+            //检验用户名是否已存在
+            let checkUserId = (rule, value, callback) => {
+                axios.get('customer?action=isExist', {
+                    params: {
+                        'userId': value,
+                    }
+                }).then((res) => {
+                    if (res.data.code === 501) {
+                        callback(new Error('该用户名已存在'));
+                    } else if (res.data.code === 500) {
+                        location.href = '../error.html';
+                        //callback(new Error(value + '部门已经存在!'));
+                    }
+                    callback();
+                })
+            }
+            //检测两次密码是否相等
+            let checkReplyPassword = (rule, value, callback) => {
+                if (value !== this.registRuleForm.password) {
+                    callback(new Error('两次密码不一致'));
+                } else {
+                    callback();
+                }
+            }
+            return {
+                dialogVisible: false, //弹窗可视控制
+                dialogResetVisible: false,
+                //添加图片
+                src: 'https://5b0988e595225.cdn.sohucs.com/images/20181203/1cb55284d3494919843fbb53b626dc48.jpeg',
+                circleUrl:'https://588ku.com/ycpng/10995763.html',
+                loginRuleForm: {
+                    userName: '',
+                    password: '',
+                    type: ''
+                },
+                registRuleForm: {
+                    userId: '',
+                    userName: '',
+                    password: '',
+                    replyPassword: '',
+                    telNumber: '',
+                },
+                loginRules: {
+                    userName: [{
+                        required: true,
+                        message: '用户名不能为空',
+                        trigger: 'blur'
+                    }],
+                    password: [{
+                        required: true,
+                        message: '密码不能为空',
+                        trigger: 'blur'
+                    }],
+                    type: [{
+                        required: true,
+                        message: '请选择用户类型',
+                        trigger: 'blur'
+                    }]
+                },
+
+                registRules: {
+                    userId: [
+                        {
+                            required: true,
+                            message: '用户名不能为空',
+                            trigger: 'blur'
+                        },
+                        /*{
+                            pattern: '^[A-Za-z][A-Za-z0-9_]+$',
+                            message: '用户名以字母开头，包含字母、数字和下划线',
+                            trigger: 'blur'
+                        },*/
+                        {
+                            min: 7,
+                            max: 7,
+                            message: '用户名长度为7个字符',
+                            trigger: 'blur'
+                        },
+                        {
+                            validator: checkUserId,
+                            trigger: 'blur'
+                        }
+                    ],
+                    userName: [
+                        {
+                            required: true,
+                            message: '用户姓名不能为空',
+                            trigger: 'blur'
+                        },
+                        {
+                            min: 2,
+                            max: 10,
+                            message: '用户姓名长度为2-10个字符',
+                            trigger: 'blur'
+                        },
+                    ],
+                    password: [
+                        {
+                            required: true,
+                            message: '密码不能为空',
+                            trigger: 'blur'
+                        },
+                        /*{
+                            pattern: '[A-Z]+',
+                            message: '密码必须包含大写字母',
+                            trigger: 'blur'
+                        },*/
+                        {
+                            min: 6,
+                            max: 12,
+                            message: '密码长度为6-12个字符',
+                            trigger: 'blur'
+                        }
+                    ],
+                    replyPassword: [
+                        {
+                            required: true,
+                            message: '密码不能为空',
+                            trigger: 'blur'
+                        },
+                        {
+                            validator: checkReplyPassword,
+                            trigger: 'blur'
+                        }
+                    ],
+                    telNumber: [
+                        {
+                            required: true,
+                            message: '联系电话不能为空',
+                            trigger: 'blur'
+                        }
+                    ]
+                },
+
+                loginOptions: [
+                    {value: 1, text: '管理员'},
+                    {value: 2, text: '客户'},
+                    {value: 3, text: '员工'}
+                ]
+            }
+        },
+        methods: {
+            //登录
+            onSubmitLogin(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        axios.get("index?action=login", {params: this.loginRuleForm})
+                            .then((res) => {
+
+                                if (res.data.code === 0 && res.data.data.type === 1) {//如果是管理员
+                                    window.sessionStorage.removeItem("msg");//移除错误信息
+                                    location.href = 'admin_main.html'
+
+                                } else if (res.data.code === 0 && res.data.data.type === 2) { //如果是客户
+                                    window.sessionStorage.removeItem("msg");//移除错误信息
+                                    sessionStorage.setItem("customerid", this.loginRuleForm.userName);//存储用户账号
+                                    location.href = 'customer.html';
+
+                                } else if (res.data.code === 0 && res.data.data.type === 3) {//如果是员工
+                                    window.sessionStorage.removeItem("msg");//移除错误信息
+                                    location.href = 'staff_main.html';
+
+                                } else if (res.data.code === 402) {//密码错误
+                                    this.$alert('密码错误...');
+                                    //设置错误信息
+                                    window.sessionStorage.setItem("msg", res.data.msg);
+                                    //没有此用户
+                                } else if (res.data.code === 401) {
+                                    this.$alert('用户不存在或已禁用...');
+                                    //设置错误信息
+                                    window.sessionStorage.setItem("msg", res.data.msg);
+                                } else {
+                                    //设置错误信息
+                                    window.sessionStorage.setItem("msg", res.data.msg);
+                                    location.href = 'login.html';
+                                }
+                            })
+                        //console.log(this.user);
+                        console.log('WTF......');
+                    } else {
+                        console.log('error submit!!');
+                        return false;
+                    }
+                });
+            },
+            onSubmitRegist(formName) {
+                axios.get("customer?action=create", {params: this.registRuleForm})
+                    .then((res) => {
+                        if (res.data.code === 500) {
+                            this.err.messages.length = 0; //清空数组
+                            for (let i = 0; i < res.data.data.length; i++) {
+                                this.err.messages.push(res.data.data[i].defaultMessage);
+                            }
+                        } else if (res.data.code === 0) {
+                            this.$alert('用户注册成功！点击确定按钮跳回登录界面', '提示', {
+                                confirmButtonText: '确定',
+                                callback: action => {
+                                    //parent.location.reload();
+                                    location.href = 'login.html';
+                                }
+                            });
+                        } else {
+                            location.href = '../error.html';
+                        }
+                    }).catch(() => {
+                    location.href = '../error.html';
+                });
+                //延时加载
+                this.loading();
+            },
+
+            ////延时加载
+            loading() {
+                const loading = this.$loading({
+                    lock: true,
+                    text: '数据处理中',
+                    spinner: 'el-icon-loading',
+                    background: 'rgba(0, 0, 0, 0.7)'
+                });
+                setTimeout(() => {
+                    loading.close();
+                }, 1000);
+            },
+
+            //注册
+            handleRegist() {
+                //打开弹窗
+                this.dialogVisible = true;
+            },
+
+            //关闭弹窗
+            handleCloseDialog() {
+                this.dialogVisible = false;
+                //location.reload();
+            }
+        }
+    }
+    setInterval("cg.innerHTML=new Date().toLocaleString()",1000)
+    let Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>
+
+</html>

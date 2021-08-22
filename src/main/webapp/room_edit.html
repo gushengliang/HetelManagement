@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>编辑房间</title>
+    <!-- 引入样式 -->
+    <!--<link rel="stylesheet" href="css/index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="js/vue.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/axios.js"></script>
+    <script src="js/qs.js"></script>
+    
+</head>
+<body>
+<div id="app">
+    <div style="margin: 10px 0;">
+        <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="200px">
+            <div style="clear: both; margin: 10px;">
+                <i v-for="msg in err.messages" class="el-icon-error" style="color: #F56C6C; margin-left: 100px; display: block;">{{msg}}</i>
+            </div>
+            <el-form-item label="房间号（禁止修改）" prop="roomId">
+                <el-input placeholder="请输入房间编号" v-model="ruleForm.roomId" :disabled="true" style="width: 70%;">
+                </el-input>
+            </el-form-item>
+            <el-form-item label="房间名" prop="roomName">
+                <el-input placeholder="请输入房间名" v-model="ruleForm.roomName" style="width: 70%;">
+                </el-input>
+            </el-form-item>
+            <el-form-item label="房间价格" prop="roomPrice">
+                <el-input placeholder="请输入房间价格" v-model="ruleForm.roomPrice" style="width: 70%;">
+                </el-input>
+            </el-form-item>
+            <!--<el-form-item label="房间类型" prop="roomType">
+                <el-select v-model="ruleForm.roomType" placeholder="请选择房间类型">
+                    <el-option
+                            v-for="item in roomTypes"
+                            :key="item.value"
+                            :label="item.text"
+                            :value="item.value">
+                    </el-option>
+                </el-select>
+            </el-form-item>-->
+            <el-form-item label="房间状态" prop="roomState">
+                <el-select v-model="ruleForm.roomState" placeholder="请选择房间状态">
+                    <el-option
+                            v-for="item in roomStates"
+                            :key="item.value"
+                            :label="item.text"
+                            :value="item.value">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="success" icon="el-icon-check" @click="onSubmit('ruleForm')">确认</el-button>
+                <!--<el-button type="danger" icon="el-icon-close" @click="">取消</el-button>-->
+            </el-form-item>
+        </el-form>
+    </div>
+</div>
+</body>
+<script>
+    let Main = {
+        data() {
+            return {
+                roomTypes:[], //房间类型集合
+                roomStates:[],//房间占用状态
+                ruleForm: { //参数
+                    roomId: '',
+                    roomName: '',
+                    roomPrice: '',
+                    roomType: '',
+                    roomState: '',
+                },
+                rules:{
+                    roomId: [{
+                        required: true,
+                        message: '请输入房间号',
+                        trigger: 'blur'
+                    },
+                        /*{
+                            pattern: '^[A-Z]{1}\\d{3}$ ',
+                            message: '房间号应为一个大写字母和三位数字',
+                            trigger: 'blur'
+                        },*/
+                        {
+
+                        },
+                    ],
+                    roomName: [{
+                        required: true,
+                        message: '请输入房间名',
+                        trigger: 'blur'
+                    }],
+                    roomPrice: [{
+                        required: true,
+                        message: '请输入房间名',
+                        trigger: 'blur'
+                    }],
+                    // roomType: [{
+                    //     required: true,
+                    //     message: '请选择房间类型',
+                    //     trigger: 'blur'
+                    // }],
+                    // roomState: [{
+                    //     required: true,
+                    //     message: '请选择房间状态',
+                    //     trigger: 'blur'
+                    // }]
+                },
+                err: {
+                    messages: []
+                }
+            }
+        },
+
+        mounted() {
+            this.initState();
+            // this.initRoomMessage();
+            // 窗口监听Types：接受父页面发来的信息
+            window.addEventListener('message', (event) => {
+                this.ruleForm = event.data;
+            })
+        },
+
+        methods: {
+            //初始化占用状态
+            initState() {
+                this.roomStates = [
+                    {text:'占用', value: 1},
+                    {text:'空闲', value: 0}
+                ]
+            },
+
+            //提交数据
+            onSubmit(formName) {
+                console.log(formName);
+                this.$refs[formName].validate((valid) => {
+                    if(valid) {
+                        console.log('success...')
+                        this.postData(); //提交数据
+                    }
+                    else {
+                        console.log('failed...')
+                    }
+                    return false;
+                });
+            },
+
+            postData() {
+                axios.get('room?action=save', {params: this.ruleForm})
+                    .then((res) => {
+                        if(res.data.code === 500) {
+                            this.err.messages.length = 0; //清空数组
+                            for(let i = 0; i < res.data.data.length; i++) {
+                                this.err.messages.push(res.data.data[i].defaultMessage);
+                            }
+                        } else if(res.data.code === 0) {
+                            this.$alert('数据编辑成功', '提示', {
+                                confirmButtonText: '确定',
+                                callback: action => {
+                                    parent.location.reload();
+                                }
+                            });
+                        } else {
+                            location.href = '../error.html';
+                        }
+                    }).catch(() => {
+                    location.href = '../error.html';
+                });
+                //延时加载
+                this.loading();
+            },
+            ////延时加载
+            loading() {
+                const loading = this.$loading({
+                    lock: true,
+                    text: '数据处理中',
+                    spinner: 'el-icon-loading',
+                    background: 'rgba(0, 0, 0, 0.7)'
+                });
+                setTimeout(() => {
+                    loading.close();
+                }, 1000);
+            },
+
+            //退回上一页面
+            goBack() {
+                window.history.back();
+            },
+        },
+    }
+    let Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>
+</html>

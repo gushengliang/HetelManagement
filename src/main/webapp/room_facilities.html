@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>编辑房间内设施</title>
+    <!-- 引入样式 -->
+    <!--<link rel="stylesheet" href="css/index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="js/vue.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/axios.js"></script>
+    <script src="js/qs.js"></script>
+</head>
+<body>
+<div id="app">
+    <template>
+        <el-table
+                :data="facilityData"
+                tooltip-effect="dark"
+                style="width: 100%"
+                stripe>
+
+            <el-table-column prop="facilityId" label="编号">
+
+            </el-table-column>
+            <el-table-column prop="facilityName" label="名称">
+
+            </el-table-column>
+
+            <el-table-column prop="facilityPrice" label="价格">
+
+            </el-table-column>
+        </el-table>
+        <div>
+            <el-button @click="handleCloseCheckDialog">确定</el-button>
+            <el-button type="info" @click="editRoomFacilities">编辑</el-button>
+        </div>
+    </template>
+</div>
+<script>
+    let Main = {
+        data() {
+            return {
+                showRoomState: [],  //房屋状态集合
+                types: [], //部门性质集合
+                dialogVisible: false, //隐藏弹窗
+                dialogCreateVisible: false,//隐藏创建弹窗
+                dialogEditVisible: false, //隐藏编辑弹窗
+                dialogCheckVisible: false, //隐藏查看设施弹窗
+                tableData: [], //列表数据集合
+                facilityData: [], //设施列表数据集合
+                multipleSelection: [], //已选择的行集合
+                array: [], //已选择的id集合
+                pagination: { //分页参数
+                    currentPage: 1,
+                    pageSize: 5,
+                    total: 0
+                },
+                search: { //查询参数
+                    roomId: '',
+                    roomName: '',
+                    roomType: '',
+                    roomPrice: '',
+                    roomState: null,
+                    currentPage: 1,
+                    pageSize: 5
+                }
+            }
+        },
+
+        //初始化数据列表，挂载方法，页面加载完成后自动执行该方法
+        mounted() {
+            this.initShowRoomState(); //初始化showRoomState
+            this.getData(); //获取列表数据
+        },
+
+        methods: {
+
+            //初始化showRoomState
+            initShowRoomState() {
+                this.showRoomState = [
+                    {
+                        text: '显示全部房屋', value: null
+                    },
+                    {
+                        text: '显示占用房屋', value: 1
+                    },
+                    {
+                        text: '显示空闲房屋', value: 0
+                    },
+                ]
+            },
+
+            //查询
+            handleQuery(){
+                this.getData();
+            },
+            //重置按钮
+            handleReset(){
+                this.search.roomId ='';
+                this.search.roomName = '';
+                this.search.roomType = '';
+                this.search.roomPrice = '';
+            },
+            //页面大小改变事件
+            handleSizeChange(val) {
+                this.pagination.pageSize = val;
+                this.getData();
+            },
+            //当页面改变事件
+            handleCurrentChange(val) {
+                this.pagination.currentPage = val;
+                this.getData();
+            },
+
+            //多选选项改变事件
+            handleSelectionChange(val) {
+                this.multipleSelection = [];
+                val.forEach((currentVal)=> {
+                    let roomId = currentVal.roomId;
+                    this.multipleSelection.push(roomId);
+                })
+            },
+
+            //获取列表参数
+            getData() {
+                this.facilityData = null; //清空数组（表格数据）
+                axios.get("room?action=getFacilities", {params: {roomId: row.roomId}})
+                    .then((res)=> {
+                        let result = res.data;//获取控制器回传的数据
+                        if(result.code === 0 && result.data != null){
+                            //console.log(result)
+                            this.facilityData = result.data;//绑定表格数据
+                        }
+                    })
+
+                //打开弹窗
+                //this.dialogCheckVisible = true;
+            },
+            //新建事件
+            handleCreate() {
+                //打开弹窗
+                this.dialogCreateVisible = true;
+                //获取iframe对象
+                //let iframe = this.$refs.dialogCreateFrame;
+            },
+
+            //编辑事件
+            handleEdit(row) {
+                //打开弹窗
+                this.dialogEditVisible = true;
+                //获取iframe对象  .contentWindow属性获取对象页面的属性和方法
+                let iframe = this.$refs.dialogEditFrame;
+                //向窗口传值
+                iframe.contentWindow.postMessage(row, '*');
+
+            },
+
+            //查看设施事件
+            handleCheck(row) {
+                /* //获取iframe对象  .contentWindow属性获取对象页面的属性和方法
+                 let iframe = this.$refs.dialogCheckFrame;
+                 //向窗口传值
+                 iframe.contentWindow.postMessage(row, '*');*/
+                this.facilityData = null; //清空数组（表格数据）
+                axios.get("room?action=getFacilities", {params: {roomId: row.roomId}})
+                    .then((res)=> {
+                        let result = res.data;//获取控制器回传的数据
+                        if(result.code === 0 && result.data != null){
+                            //console.log(result)
+                            this.facilityData = result.data;//绑定表格数据
+                        }
+                    })
+
+                //打开弹窗
+                this.dialogCheckVisible = true;
+            },
+
+            //关闭新建弹窗
+            handleCloseCreateDialog() {
+                this.dialogCreateVisible = false;
+                this.getData();
+                //location.reload();
+            },
+
+            //关闭编辑弹窗
+            handleCloseEditDialog() {
+                this.dialogEditVisible = false;
+                this.getData();
+                //location.reload();
+            },
+
+            handleCloseCheckDialog() {
+                this.dialogCheckVisible = false;
+                this.getData();
+            },
+
+            //占用房间
+            handleOccupy(roomId) {
+                this.$confirm('是否入住?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    axios.get("room?action=occupyRoom", {params: {roomId: roomId}})
+                        .then((res) => {
+                            let result = res.data;
+                            if (result.code === 0 && result.data != null) {
+                                //console.log(result);
+                                this.getData();
+                                this.$message({
+                                    type: 'success',
+                                    message: '操作成功'
+                                })
+                            }
+                        })
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '本操作已取消'
+                    })
+                })
+            },
+
+            //编辑房间内设施
+            editRoomFacilities() {
+
+            },
+
+            //批量入住房间
+            dismissMany() {
+                if(this.multipleSelection === null) {
+                    this.$alert('请选择要入住的房间')
+                }
+                else {
+                    //console.log(this.multipleSelection)
+                    this.$confirm('是否批量操作?', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning',
+
+                    }).then(() => {
+                        axios.get("room?action=deleteMany", {
+                            params: {multipleSelection: this.multipleSelection},
+                            paramsSerializer: params=> {
+                                return window.Qs.stringify(params, { indices: false });
+                            }
+                        })
+                            .then((res)=> {
+                                let result = res.data;
+                                if(result.code === 0 && result.data != null) {
+                                    //console.log(result);
+                                    this.getData();
+                                    this.$message({
+                                        type: 'success',
+                                        message: '批量入住成功'
+                                    })
+                                }
+                            })
+                    }).catch(() => {
+                        this.$message({
+                            type: 'info',
+                            message: '本操作已取消'
+                        })
+                    })
+                }
+            },
+            // goBack() {
+            //     window.history.back();
+            // },
+        }
+    }
+    let Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>
+</body>
+</html>

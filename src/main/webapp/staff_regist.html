@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>添加员工</title>
+    <!-- 引入样式 -->
+    <!--<link rel="stylesheet" href="css/index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="js/vue.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/axios.js"></script>
+    <script src="js/qs.js"></script>
+    <!-- 引入自定义样式-->
+    <!--<link rel="stylesheet" href="css/staff_list.css">-->
+</head>
+<body>
+<div id="app">
+    <!--<div style="border: 1px solid #eee; padding: 10px;">
+        <el-page-header @back="goBack" content="添加员工"></el-page-header>
+    </div>-->
+    <div style="margin: 10px 0;">
+        <el-form :model="ruleForm" :rules="rules" ref="ruleForm">
+            <div style="clear: both; margin: 10px;">
+                <i v-for="msg in err.messages" class="el-icon-error" style="color: #F56C6C; margin-left: 100px; display: block;">{{msg}}</i>
+            </div>
+            <el-form-item label="员工编号" prop="staffId">
+                <el-input placeholder="请输入员工编号" v-model="ruleForm.staffId" style="width: 80%">
+                </el-input>
+            </el-form-item>
+            <el-form-item label="员工姓名" prop="staffName">
+                <el-input placeholder="请输入员工姓名" v-model="ruleForm.staffName" style="width: 80%">
+                </el-input>
+            </el-form-item>
+            <el-form-item label="员工职务" prop="staffPosition">
+                <el-select v-model="ruleForm.staffPosition" placeholder="请选择员工职务">
+                    <el-option
+                            v-for="item in staffPositions"
+                            :key="item.value"
+                            :label="item.text"
+                            :value="item.value">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="success" icon="el-icon-check" @click="onSubmit('ruleForm')">确认添加</el-button>
+                <!--<el-button type="danger" icon="el-icon-close" @click="">取消</el-button>-->
+            </el-form-item>
+        </el-form>
+    </div>
+</div>
+</body>
+<script>
+    let Main = {
+        data() {
+            //自定义数据校验：判断部门名称是否已存在
+            let checkStaff = (rule, value, callback) => {
+                axios.get('staff?action=isExist', {
+                    params: {
+                        'staffId': value,
+                    }
+                }).then((res) => {
+                    if(res.data.code === 501) {
+                        callback(new Error('编号为' + value + '的员工已经存在'));
+                    } else if(res.data.code === 500) {
+                        location.href = '../error.html';
+                        //callback(new Error(value + '部门已经存在!'));
+                    }
+                    callback();
+                })
+            };
+            return {
+                staffPositions:[], //职务集合
+                ruleForm: { //新建参数
+                    staffId: '',
+                    staffName: '',
+                    staffPosition: '',
+                },
+                rules:{
+                    staffId: [{
+                            required: true,
+                            message: '请输入员工编号',
+                            trigger: 'blur'
+                        },
+                        {
+                            pattern: '^[0-9]{8,8}$',
+                            message: '员工编号长度应为8位数字',
+                            trigger: 'blur'
+                        },
+                        {
+                            validator: checkStaff,
+                            trigger: 'blur'
+                        },
+                    ],
+                    staffName: [{
+                        required: true,
+                        message: '请输入员工姓名',
+                        trigger: 'blur'
+                    }],
+                    staffPosition: [{
+                        required: true,
+                        message: '请选择员工部门',
+                        trigger: 'blur'
+                    }]
+                },
+                err: {
+                    messages: []
+                }
+            }
+        },
+
+        mounted() {
+            this.initStaffPositions();
+            // 窗口监听：接受父页面发来的信息
+            // window.addEventListener('message', (event) => {
+            //     this.ruleForm = event.data;
+            // })
+        },
+
+        methods: {
+            //初始化StaffPositions
+            initStaffPositions() {
+                axios.get("position?action=getAllPositions")
+                    .then((res)=> {
+                        if(res.data.code === 0) {
+                            this.staffPositions = res.data.data;
+                        }
+                    })
+            },
+
+            onSubmit(formName) {
+
+                this.$refs[formName].validate((valid) => {
+                    if(valid) {
+                        this.postData(); //提交数据
+                    }
+                    return false;
+                });
+            },
+
+            postData() {
+                axios.get('staff?action=create', {params: this.ruleForm})
+                    .then(res => {
+                        if(res.data.code === 500) {
+                            this.err.messages.length = 0; //清空数组
+                            for(let i = 0; i < res.data.data.length; i++) {
+                                this.err.messages.push(res.data.data[i].defaultMessage);
+                            }
+                        } else if(res.data.code === 0) {
+                            this.$alert('员工编辑成功', '提示', {
+                                confirmButtonText: '确定',
+                                callback: action => {
+                                    parent.location.reload();
+                                }
+                            });
+                        } else {
+                            location.href = '../error.html';
+                        }
+                    }).catch(() => {
+                    location.href = '../error.html';
+                });
+                //延时加载
+                this.loading();
+            },
+            ////延时加载
+            loading() {
+                const loading = this.$loading({
+                    lock: true,
+                    text: '数据处理中',
+                    spinner: 'el-icon-loading',
+                    background: 'rgba(0, 0, 0, 0.7)'
+                });
+                setTimeout(() => {
+                    loading.close();
+                }, 5000);
+            },
+        }
+    }
+    let Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>
+</html>

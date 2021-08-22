@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+	<!-- 引入样式 -->
+	<!--<link rel="stylesheet" href="css/index.css">-->
+	<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+	<!-- 引入组件库 -->
+	<script src="js/vue.js"></script>
+	<script src="js/index.js"></script>
+	<script src="js/axios.js"></script>
+	<script src="js/qs.js"></script>
+</head>
+<style>
+
+</style>
+
+<body>
+	<div id="app">
+		<div style="border: 1px solid #eee; padding: 10px;">
+			<el-page-header @back="goBack" content="财务统计"></el-page-header>
+		</div>
+		<template>
+			<el-table :data="tableData1" border height="400" :summary-method="getSummaries" show-summary
+				style="width: 100%; margin-top: 20px">
+				<el-table-column prop="day" label="日期" width="300">
+				</el-table-column>
+				<el-table-column prop="amount1" label="营业额（元）">
+				</el-table-column>
+			</el-table>
+			<el-table :data="tableData2" border show-summary style="width: 100%">
+				<el-table-column prop="month" label="月度" width="300">
+				</el-table-column>
+				<el-table-column prop="amount2" sortable label="营业额（元）">
+				</el-table-column>
+			</el-table>
+			<el-table :data="tableData3" border show-summary style="width: 100%">
+				<el-table-column prop="year" label="年度" width="300">
+				</el-table-column>
+				<el-table-column prop="amount3" sortable label="营业额（元）">
+				</el-table-column>
+			</el-table>
+		</template>
+	
+	</div>
+</body>
+
+</html>
+<script>
+	var Main = {
+		data() {
+			//自定义数据校验：判断部门名称是否已存在
+			var checkDeptName = (rule, value, callback) => {
+				/*axios.get('isExist', {
+					params: {
+						'deptName': value,
+
+					}
+				}).then(resp => {
+					if(resp.data.code == 401) {
+						callback(new Error(value + '部门已经存在!'));
+					} else if(resp.data.code == 500) {
+						location.href = '../error.html';
+					}
+					callback();
+				})*/
+			};
+
+			return {
+				tableData1: [{
+					day: '2020-11-1',				
+					amount1: '234',				
+				}, {
+					day: '2020-11-5',
+					amount1: '165',
+			
+				}, {
+					day: '2020-11-12',
+					amount1: '324',			
+				}, {
+					day: '2020-11-18',
+					amount1: '621',					
+				}, {
+					day: '2020-11-21',
+					amount1: '539',				
+				}],
+				tableData2: [{
+					month: '1月',
+					amount2: '234',				
+				}, {
+					month: '2月',
+					amount2: '165',
+				
+				}, {
+					month: '3月',
+					amount2: '324',			
+				}, {
+					month: '4月',
+					amount2: '621',					
+				}, {
+					month: '5月',
+					amount2: '539',				
+				}],
+				tableData3: [{
+					year: '2011',
+					amount3: '234',				
+				}, {
+					year: '2018',
+					amount3: '165',
+				
+				}, {
+					year: '2019',
+					amount3: '324',			
+				}, {
+					year: '2020',
+					amount3: '621',					
+				}, {
+					year: '2021',
+					amount3: '539',				
+				}]
+			};
+		},
+		mounted() {
+			//初始化类型
+			this.initType();
+			// 窗口监听：接受父页面发来的信息
+			window.addEventListener('message', (event) => {
+				this.ruleForm = event.data;
+			})
+		},
+
+		methods: {
+			onSubmit(formName) {
+
+				this.$refs[formName].validate((valid) => {
+					if (valid) {
+						this.postData(); //提交数据
+					}
+					return false;
+				});
+			},
+			goBack() {
+				window.history.back();
+			},
+			getSummaries(param) {
+				const { columns, data } = param;
+				const sums = [];
+				columns.forEach((column, index) => {
+					if (index === 0) {
+						sums[index] = '总价';
+						return;
+					}
+					const values = data.map(item => Number(item[column.property]));
+					if (!values.every(value => isNaN(value))) {
+						sums[index] = values.reduce((prev, curr) => {
+							const value = Number(curr);
+							if (!isNaN(value)) {
+								return prev + curr;
+							} else {
+								return prev;
+							}
+						}, 0);
+						sums[index] += ' 元';
+					} else {
+						sums[index] = 'N/A';
+					}
+				});
+
+				return sums;
+			}
+		},
+			postData() {
+			/*axios.post('save', this.ruleForm)
+				.then(resp => {
+					if(resp.data.code == 400) {
+						this.err.messages.length = 0; //清空数组
+						for(let i = 0; i < resp.data.data.length; i++) {
+							this.err.messages.push(resp.data.data[i].defaultMessage);
+						}
+					} else if(resp.data.code == 0) {
+						this.$alert('数据编辑成功', '提示', {
+							confirmButtonText: '确定',
+							callback: action => {
+								parent.location.reload();
+							}
+						});
+					} else {
+						location.href = '../error.html';
+					}
+				}).catch(() => {
+					location.href = '../error.html';
+				});
+			//延时加载
+			this.loading();*/
+		},
+		handleEdit(index, row) {
+        console.log(index, row);
+      },
+      handleDelete(index, row) {
+        console.log(index, row);
+      },
+		////延时加载
+		loading() {
+			const loading = this.$loading({
+				lock: true,
+				text: '数据处理中',
+				spinner: 'el-icon-loading',
+				background: 'rgba(0, 0, 0, 0.7)'
+			});
+			setTimeout(() => {
+				loading.close();
+			}, 1000);
+		},	
+	};
+
+	var Ctor = Vue.extend(Main)
+	new Ctor().$mount('#app')
+</script>

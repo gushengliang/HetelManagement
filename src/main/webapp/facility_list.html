@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
+    <title>设施管理</title>
+    <!-- 引入样式 -->
+    <!--<link rel="stylesheet" href="css/index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="js/vue.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/axios.js"></script>
+    <script src="js/qs.js"></script>
+    <!-- 引入自定义样式-->
+    <!--<link rel="stylesheet" href="css/staff_list.css">-->
+</head>
+<body>
+<div id="app">
+
+    <div style="margin: 10px 0;">
+
+        <el-input placeholder="设施编号" v-model="search.facilityId" style="width: 23%">
+        </el-input>
+        <el-input placeholder="设施名称" v-model="search.facilityName" style="width: 23%">
+        </el-input>
+        <el-input placeholder="设施价格" v-model="search.facilityPrice" style="width: 23%">
+        </el-input>
+        <el-button slot="append" icon="el-icon-search" @click="handleQuery">搜索</el-button>
+        <el-button slot="append" icon="el-icon-refresh-left" @click="handleReset">重置</el-button>
+    </div>
+    <template>
+
+        <el-table
+                ref="multipleTable"
+                :data="tableData"
+                tooltip-effect="dark"
+                style="width: 100%"
+                stripe>
+
+            <el-table-column type="selection" width="60" fixed="left">
+
+            </el-table-column>
+            <el-table-column prop="facilityId" label="编号">
+
+            </el-table-column>
+            <el-table-column prop="facilityName" label="名称">
+
+            </el-table-column>
+
+            <el-table-column prop="facilityPrice" label="价格">
+
+            </el-table-column>
+            <el-table-column fixed="right" label="操作" width="200px">
+                <template slot-scope="scope">
+                    <el-link type="primary" icon="el-icon-edit" @click="handleEdit(scope.row)">编辑</el-link>
+                    <!--<el-link type="danger" icon="el-icon-delete" @click="dismiss(scope.row.staffId)">开除</el-link>-->
+                </template>
+            </el-table-column>
+        </el-table>
+    </template>
+    <template>
+        <div class="block">
+            <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="pagination.currentPage" :page-sizes="[3, 5, 10, 15, 20, 100]" :page-size="pagination.pageSize" layout="total, sizes, prev, pager, next, jumper" :total="pagination.total" background>
+            </el-pagination>
+            <div style="text-align: right; margin-right: 50px">
+                <el-button type="primary" icon="el-icon-plus" @click="handleCreate" plain >添加设施</el-button>
+                <!--<el-button type="danger" icon="el-icon-delete" plain>删除选中项</el-button>-->
+            </div>
+        </div>
+    </template>
+
+    <template>
+        <el-dialog
+                title="添加设施"
+                :visible.sync="dialogCreateVisible"
+                :before-close="handleCloseCreateDialog">
+                <span slot="footer" class="dialog-footer">
+                    <iframe
+                            ref="dialogCreateFrame"
+                            src="facility_regist.html"
+                            frameborder="0"
+                            width="100%"
+                            height="400px">
+                    </iframe>
+                </span>
+        </el-dialog>
+    </template>
+
+    <template>
+        <el-dialog
+                title="编辑设施"
+                :visible.sync="dialogEditVisible"
+                :before-close="handleCloseEditDialog">
+                <span slot="footer" class="dialog-footer">
+                    <iframe
+                            ref="dialogEditFrame"
+                            src="facility_edit.html"
+                            frameborder="0"
+                            width="100%"
+                            height="400px">
+                    </iframe>
+                </span>
+        </el-dialog>
+    </template>
+
+</div>
+</body>
+<script>
+    let Main = {
+        data() {
+            return {
+                //staffPositions: [], //职务集合
+                types: [], //部门性质集合
+                dialogCreateVisible: false, //隐藏新建弹窗
+                dialogEditVisible: false, //隐藏编辑弹窗
+                tableData: [], //列表数据集合
+                multipleSelection: [], //已选择的行集合
+                array: [], //已选择的id集合
+                pagination: { //分页参数
+                    currentPage: 1,
+                    pageSize: 5,
+                    total: 0
+                },
+                search: { //查询参数
+                    facilityId: '',
+                    facilityName: '',
+                    facilityPrice: '',
+                    currentPage: 1,
+                    pageSize: 5
+                }
+            }
+        },
+
+        //初始化数据列表，挂载方法，页面加载完成后自动执行该方法
+        mounted() {
+            //获取列表数据
+            this.getData();
+        },
+
+        methods: {
+            //查询
+            handleQuery(){
+                this.getData();
+            },
+
+            //重置按钮
+            handleReset(){
+                this.search.facilityId ='';
+                this.search.facilityName = '';
+                this.search.facilityPrice = '';
+            },
+
+            //页面大小改变事件
+            handleSizeChange(val) {
+                this.pagination.pageSize = val;
+                this.getData();
+            },
+            //当页面改变事件
+            handleCurrentChange(val) {
+                this.pagination.currentPage = val;
+                this.getData();
+            },
+
+            //获取列表参数
+            getData() {
+                //this.tableData.length = 0; //清空数组（表格数据）
+                this.tableData = null; //清空数组（表格数据）
+                //改变search对的当前和页面大小
+                this.search.currentPage = this.pagination.currentPage;
+                this.search.pageSize = this.pagination.pageSize;
+                axios.get("facility?action=list", {params: this.search})
+                    .then((res)=> {
+                        let result = res.data;//获取控制器回传的数据
+                        if(result.code === 0 && result.data != null){
+                            //console.log(result)
+                            this.tableData = result.data.data;//绑定表格数据
+                            this.pagination = result.data;//绑定分页参数
+                        }
+                    })
+            },
+
+            //新建事件
+            handleCreate() {
+                //打开弹窗
+                this.dialogCreateVisible = true;
+            },
+
+            //编辑事件
+            handleEdit(row) {
+                //打开弹窗
+                this.dialogEditVisible = true;
+                //获取iframe对象  .contentWindow属性获取对象页面的属性和方法
+                let iframe = this.$refs.dialogEditFrame;
+                //向窗口传值
+                iframe.contentWindow.postMessage(row, '*');
+
+            },
+
+
+
+            //关闭新建弹窗
+            handleCloseCreateDialog() {
+                this.dialogCreateVisible = false;
+                this.getData();
+                //location.reload();
+            },
+
+            //关闭编辑弹窗
+            handleCloseEditDialog() {
+                this.dialogEditVisible = false;
+                this.getData();
+                //location.reload();
+            },
+
+        }
+    }
+    let Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>
+</html>

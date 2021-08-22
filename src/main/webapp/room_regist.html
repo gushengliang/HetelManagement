@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>添加房间</title>
+    <!-- 引入样式 -->
+    <!--<link rel="stylesheet" href="css/index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="js/vue.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/axios.js"></script>
+    <script src="js/qs.js"></script>
+</head>
+<body>
+<div id="app">
+    <!--<div style="border: 1px solid #eee; padding: 10px;">
+        <el-page-header @back="goBack" content="添加房间"></el-page-header>
+    </div>-->
+    <div style="margin: 10px 0;">
+        <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="80px">
+            <div style="clear: both; margin: 10px;">
+                <i v-for="msg in err.messages" class="el-icon-error" style="color: #F56C6C; margin-left: 100px; display: block;">{{msg}}</i>
+            </div>
+            <el-form-item label="房间号" prop="roomId">
+                <el-input placeholder="请输入房间号" v-model="ruleForm.roomId" style="width: 80%;">
+                </el-input>
+            </el-form-item>
+            <el-form-item label="房间名" prop="roomName">
+                <el-input placeholder="请输入房间名" v-model="ruleForm.roomName" style="width: 80%;">
+                </el-input>
+            </el-form-item>
+            <el-form-item label="房间类型" prop="roomType">
+                <el-input placeholder="请输入房间类型" v-model="ruleForm.roomType" style="width: 80%;">
+                </el-input>
+            </el-form-item>
+            <el-form-item label="房间价格" prop="roomPrice">
+                <el-input placeholder="请输入房间价格" v-model="ruleForm.roomPrice" style="width: 80%;">
+                </el-input>
+            </el-form-item>
+            <!--<el-select v-model="value" prop="roomState" placeholder="请选择">
+                <el-option
+                        v-for="item in roomStates"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value">
+                </el-option>
+            </el-select>-->
+            <div>
+                <el-button type="success" icon="el-icon-check" @click="onSubmit('ruleForm')">确认</el-button>
+                <!--<el-button type="" icon="el-icon-refresh-left" @click="handleReset">重置</el-button>-->
+            </div>
+        </el-form>
+    </div>
+</div>
+</body>
+
+<script>
+    let Main = {
+        data() {
+            //自定义数据校验：判断房间是否已存在
+            let checkRoom = (rule, value, callback) => {
+                axios.get('room?action=isExist', {
+                    params: {
+                        'roomId': value,
+                    }
+                }).then((res) => {
+                    if(res.data.code === 501) {
+                        callback(new Error('房间号为' + value + '的房间已经存在'));
+                    } else if(res.data.code === 500) {
+                        location.href = '../error.html';
+                    }
+                    callback();
+                })
+            };
+
+            return {
+
+                roomTypes:[], //房间类型集合
+                value: '',
+                roomStates: [{
+                    value: '1',
+                    label: '占用'
+                },
+                    {
+                        value: '0',
+                        label: '空闲'
+                    }],//占用状态集合
+                ruleForm: { //新建参数
+                    roomId: '',
+                    roomName: '',
+                    roomType: '',
+                    roomPrice: '',
+                    roomState: ''
+                },
+                rules:{
+                    roomId: [{
+                        required: true,
+                        message: '请输入员工编号',
+                        trigger: 'blur',
+                        //validator: validateRoomId,
+                    },{
+                        validator: checkRoom,
+                        trigger: 'blur'
+                    }
+                    ],
+                    roomName: [{
+                        required: true,
+                        message: '请输入房间名',
+                        trigger: 'blur'
+                    }],
+                    roomType: [{
+                        required: true,
+                        message: '请输入房间类型',
+                        trigger: 'blur'
+                    }],
+                    roomPrice: [{
+                        required: true,
+                        message: '请输入房间价格',
+                        trigger: 'blur'
+                    }],
+                    // roomType: [{
+                    //     required: true,
+                    //     message: '请选择房间类型',
+                    //     trigger: 'blur'
+                    // }]
+                },
+                err: {
+                    messages: []
+                }
+            }
+        },
+
+        mounted() {
+
+            //窗口监听：接受父页面发来的信息
+            window.addEventListener('message', (event) => {
+                this.ruleForm = event.data;
+            })
+        },
+
+        methods: {
+
+            onSubmit(formName) {
+
+                this.$refs[formName].validate((valid) => {
+                    if(valid) {
+                        this.postData(); //提交数据
+                    }
+                    return false;
+                });
+            },
+
+            postData() {
+                axios.get('room?action=create', {params: this.ruleForm})
+                    .then(res => {
+                        if(res.data.code === 500) {
+                            this.err.messages.length = 0; //清空数组
+                            for(let i = 0; i < res.data.data.length; i++) {
+                                this.err.messages.push(res.data.data[i].defaultMessage);
+                            }
+                        } else if(res.data.code === 0) {
+                            this.$alert('房间添加成功', '提示', {
+                                confirmButtonText: '确定',
+                                callback: action => {
+                                    parent.location.reload();
+                                }
+                            });
+                        } else {
+                            location.href = '../error.html';
+                        }
+                    }).catch(() => {
+                    location.href = '../error.html';
+                });
+                //延时加载
+                this.loading();
+            },
+            ////延时加载
+            loading() {
+                const loading = this.$loading({
+                    lock: true,
+                    text: '数据处理中',
+                    spinner: 'el-icon-loading',
+                    background: 'rgba(0, 0, 0, 0.7)'
+                });
+                setTimeout(() => {
+                    loading.close();
+                }, 1000);
+            },
+        }
+    }
+    let Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>
+</html>

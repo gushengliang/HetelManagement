@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>查看房间设施</title>
+    <!-- 引入样式 -->
+    <!--<link rel="stylesheet" href="css/index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="js/vue.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/axios.js"></script>
+    <script src="js/qs.js"></script>
+</head>
+<body>
+<div id="app">
+    <template>
+
+        <el-table
+                :data="tableData"
+                tooltip-effect="dark"
+                style="width: 100%"
+                stripe>
+
+            <el-table-column prop="facilityId" label="编号">
+
+            </el-table-column>
+            <el-table-column prop="facilityName" label="名称">
+
+            </el-table-column>
+
+            <el-table-column prop="facilityPrice" label="价格">
+
+            </el-table-column>
+        </el-table>
+    </template>
+</div>
+</body>
+<script>
+    let Main = {
+        data() {
+            return {
+                types: [], //部门性质集合
+                tableData: [], //列表数据集合
+                roomId: '001', //房间编号
+            }
+        },
+
+        created() {
+            //获取列表数据
+            this.getData();
+            console.log(this.tableData);
+        },
+
+        //初始化数据列表，挂载方法，页面加载完成后自动执行该方法
+        mounted() {
+            // 窗口监听：接受父页面发来的信息
+            window.addEventListener('message', (event) => {
+                //console.log(event.data);
+                this.roomId = event.data.roomId;
+                console.log(this.roomId);
+            })
+        },
+
+        methods: {
+            //获取列表参数
+            getData() {
+                this.tableData = null; //清空数组（表格数据）
+                axios.get("room?action=getFacilities", {params: {roomId: this.roomId}})
+                    .then((res)=> {
+                        let result = res.data;//获取控制器回传的数据
+                        if(result.code === 0 && result.data != null){
+                            //console.log(result)
+                            this.tableData = result.data.data;//绑定表格数据
+                        }
+                    })
+            },
+        }
+    }
+    let Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>
+</html>

@@ -1,0 +1,812 @@
+<!--顾客主界面-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!--<link rel="stylesheet" href="css/index.css">-->
+    <!-- 引入组件库 -->
+    <script src="js/vue.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/axios.js"></script>
+    <script src="js/qs.js"></script>
+    <title>customer</title>
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        .title {
+            text-align: center;
+            font-size: 30px;
+        }
+
+        .main {
+            border: 1px black solid;
+        }
+        .el-header {
+            background-color: #2577E3;
+            color: #FFFFFF;
+            text-align: left;
+            line-height: 60px;
+        }
+        .el-footer {
+            background-color: #2577E3;
+            color: #000000;
+            text-align: right;
+            line-height: 60px;
+        }
+        .el-aside {
+            background-color: #D3DCE6;
+            color: #333;
+            text-align: center;
+            line-height: 40px;
+        }
+
+        .el-main {
+            background-color: #E9EEF3;
+            color: #333;
+            bottom: auto;
+            text-align: -moz-left;
+            line-height: 30px;
+        }
+
+        body>.el-container {
+            /*margin-bottom: 40px;*/
+            margin: 0;
+            padding: 0;
+        }
+
+        .el-image {
+            margin: 0;
+            padding: 0;
+            width: 250px;
+            height: 200px;
+        }
+
+
+        .el-col {
+            border-radius: 4px;
+        }
+
+        .bg-purple-dark {
+            background: #99a9bf;
+        }
+
+        .bg-purple {
+            background: #d3dce6;
+        }
+
+        .bg-purple-light {
+            background: #e5e9f2;
+        }
+
+        .grid-content {
+            border-radius: 4px;
+            min-height: 36px;
+        }
+
+        .row-bg {
+            padding: 10px 0;
+            background-color: #f9fafc;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" >
+        <el-container>
+            <!--网页头-->
+            <el-header>
+                <div style="text-align:center">
+                    <!--<i class="el-icon-office-building"></i>
+                    基于自动化的酒店管理系统-->
+                    <span class="el-icon-office-building" style="font-size: x-large">
+                        基于自动化的酒店管理系统
+                    </span>
+                </div>
+
+            </el-header>
+            <span
+                    id="cg"
+                    style="text-align: right;background-color: #2577E3;color: #FFFFFF;">
+                time
+            </span>
+            <el-container  style="height:800px">
+                <!-- 个人信息部分-->
+                <el-aside width="200px">
+                    <br>
+                    <template>
+                        <div class="demo-type">
+                            <div>
+                                <el-avatar size="large" class="el-icon-s-custom"></el-avatar><br>
+                                <span >姓名：{{Customer.customerName}}</span><br>
+                                <span >账号：{{Customer.customerId}}</span><br>
+                                <el-button type="success" @click="goback">退出登录</el-button>
+                            </div>
+                        </div>
+                    </template>
+                </el-aside>
+                <!--房间信息-->
+                <el-main>
+                    <template>
+                        <el-tabs v-model="activeName" @click="second" @tab-click="handleClick" >
+
+                            <el-tab-pane label="可供选择房间" name="first">
+                                <!--预定房间表格-->
+                                <el-table  ref="multipleTable" :data="RoomData" tooltip-effect="dark" style="width: 100%"  stripe>
+                                    <el-table-column prop="roomId" label="房间号">
+
+                                    </el-table-column>
+                                    <el-table-column prop="roomName" label="名称">
+
+                                    </el-table-column>
+                                    <el-table-column prop="roomType" label="类型">
+
+                                    </el-table-column>
+                                    <el-table-column prop="roomPrice" label="价格">
+
+                                    </el-table-column>
+                                    <el-table-column fixed="right" label="操作" width="250">
+                                        <template slot-scope="scope">
+                                            <el-button type="text" @click="Detailt(scope.row)">房间详情</el-button>
+                                            <el-button type="text" @click="Getevaluate(scope.row.roomId)">查看评论</el-button>
+                                            <el-button type="primary" size="small" @click="Book(scope.row.roomId)">预定</el-button>
+                                        </template>
+
+                                    </el-table-column>
+                                </el-table>
+                            </el-tab-pane>
+
+                            <el-tab-pane label="已预定房间" name="second" >
+                                <!--已预定房间表格-->
+                                <el-table ref="multipleTable" :data="MyRoomData" tooltip-effect="dark" style="width: 100%"  stripe>
+
+                                    <el-table-column prop="room.roomId" label="房间号">
+
+                                    </el-table-column>
+                                    <el-table-column prop="room.roomName" label="房间名">
+
+                                    </el-table-column>
+
+                                    <el-table-column prop="beginTime" label="起订时间">
+
+                                    </el-table-column>
+                                    <el-table-column prop="overTime" label="结束时间">
+
+                                    </el-table-column>
+
+                                    <el-table-column fixed="right" label="操作" width="250">
+                                        <template slot-scope="scope">
+                                            <el-button type="warning" size="small" @click="Change(scope.row.orderId)">换房</el-button>
+                                            <el-button type="danger" size="small" @click="Faults(scope.row.orderId)">退房</el-button>
+                                            <el-button type="info" size="small" @click="WriteEvaluate(scope.row.orderId)">评价</el-button>
+                                        </template>
+
+                                    </el-table-column>
+                                </el-table>
+                            </el-tab-pane>
+
+                            <el-tab-pane label="已结束账单" name="third" >
+                                <!--已预定房间表格-->
+                                <el-table ref="multipleTable" :data="MyOverOrder" tooltip-effect="dark" style="width: 100%"  stripe>
+
+                                    <el-table-column prop="room.roomId" label="房间号">
+
+                                    </el-table-column>
+                                    <el-table-column prop="room.roomName" label="房间名">
+
+                                    </el-table-column>
+
+                                    <el-table-column prop="beginTime" label="起订时间">
+
+                                    </el-table-column>
+                                    <el-table-column prop="overTime" label="结束时间">
+
+                                    </el-table-column>
+
+                                    <el-table-column fixed="right" label="操作" width="250">
+                                        <template slot-scope="scope">
+                                            <el-button type="success" size="small" @click="SettleUp(scope.row.orderId)">查看详情</el-button>
+                                        </template>
+
+                                    </el-table-column>
+                                </el-table>
+                            </el-tab-pane>
+                            </el-tabs>
+                    </template>
+                </el-main>
+            </el-container>
+            <el-footer>
+                <p style="text-align: right">version:1.0</p>
+            </el-footer>
+            </el-container>
+
+
+
+        <!--预定房间的弹窗界面-->
+        <el-dialog title="酒店预定信息" :visible.sync="dialogFormVisible">
+            <el-form :model="form" :rules="rules">
+                <div class="block">
+                    <span class="demonstration">请选择房间使用时间</span>
+                    <el-date-picker
+                            v-model="value1"
+                            type="datetimerange"
+                            range-separator="至"
+                            start-placeholder="开始日期"
+                            end-placeholder="结束日期">
+                    </el-date-picker>
+                </div>
+            </el-form>
+            <!--</iframe>-->
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="dialogFormVisible = false">取 消</el-button>
+                <el-button type="primary" @click="bookroom">确 定</el-button>
+            </div>
+        </el-dialog>
+
+
+        <!--换房操作的弹窗界面-->
+        <el-dialog title="房间更换" :visible.sync="CRoomFormVisible">
+            <el-table  ref="multipleTable" :data="RoomData" tooltip-effect="dark" style="width: 100%"  stripe>
+                <el-table-column prop="roomId" label="房间号">
+
+                </el-table-column>
+                <el-table-column prop="roomName" label="名称">
+
+                </el-table-column>
+                <el-table-column prop="roomType" label="类型">
+
+                </el-table-column>
+
+                <el-table-column fixed="right" label="操作" width="150">
+                    <template slot-scope="scope">
+                        <el-button type="primary" size="small" @click="ChangeRoom(scope.row.roomId)">更换</el-button>
+                    </template>
+
+                </el-table-column>
+            </el-table>
+        </el-dialog>
+
+        <!--退房操作的弹窗界面-->
+        <el-dialog title="退房" :visible.sync="FaultsRoomPage">
+            <span>请问您是否确定退房</span><br>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="FaultsRoomPage = false">取 消</el-button>
+                <el-button type="primary" @click="PutFaults">确 定</el-button>
+            </span>
+        </el-dialog>
+
+        <!--房间评价页面-->
+        <el-dialog title="评价" :visible.sync="evaluatePage" width="30%" center>
+            <span>感谢您入住我们的酒店，您对我们酒店服务的满意程度为:</span><br>
+                <el-rate v-model="Level" show-text></el-rate><br>
+            <span>请您对我们酒店给出评价，以便于我们在今后给您提供更优质的服务：</span>
+            <el-input type="textarea" :rows="2" placeholder="请输入内容" v-model="Content"></el-input>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="centerDialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="Putevaluate">确 定</el-button>
+            </span>
+        </el-dialog>
+
+        <!--查看评价页面-->
+        <el-dialog title="评价表" :visible.sync="getevaluatePage" width="30%" center>
+            <p v-for="e in EvaluateData">
+                <el-avatar> 顾客 </el-avatar>
+                <span>{{e.order.customer.customerName}}</span><br>
+                <el-rate
+                        v-model="e.evaluateLevel"
+                        disabled
+                        show-score
+                        text-color="#ff9900">
+                </el-rate><br>
+                <span>{{e.evaluateContent}}</span><br>
+            </p><br>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="getevaluatePage = false">确定</el-button>
+            </span>
+
+        </el-dialog>
+
+        <!--结算界面（1）-->
+        <el-dialog title="结算" :visible.sync="SettleUpPage1" width="90%" center>
+            <div class="title">
+                房间发票
+            </div>
+            <div class="main" style="height: 70px;">
+                <div class="main" style="width: 30px;height: 70px;float: left;text-align: center;">
+                    订房人
+                </div>
+                <div class="main" style="width: 500px;height: 70px;float: left;">
+                    姓名：{{ Customer.customerName}}<br><br>
+                    联系电话：{{Customer.customerTelephoneNumber}}
+                </div>
+                <div class="main" style="width: 30px;height: 70px;float: left;text-align: center;">
+                    发票号
+                </div>
+                <div style="height: 70px;float: left;line-height: 70px;font-size: 20px;">
+                    {{Deposit.order.orderId}}
+                </div>
+            </div>
+            <div class="main">
+                    <table style="border: none;width: 100%;">
+                        <tr>
+                            <td>房间名</td>
+                            <td>单价（/天）</td>
+                            <td>总金额</td>
+                        </tr>
+                        <tr>
+                            <td>{{Deposit.Room.roomName}}</td>
+                            <td>{{Deposit.Room.roomPrice}}</td>
+                            <td>{{Deposit.depositPrice}}</td>
+                        </tr>
+                    </table>
+            </div>
+            <div class="main" style="height: 70px;">
+                <div class="main" style="width: 30px;height: 70px;float: left;text-align: center;">
+                    销售方
+                </div>
+                <div class="main" style="width: 500px;height: 70px;float: left;">
+                    名称：南昌酒店<br>
+                    地址：南昌市丰和南大道696号<br>
+                    电话：15711111111
+                </div>
+                <div class="main" style="width: 30px;height: 70px;float: left;text-align: center;line-height: 35px;">
+                    备注
+                </div>
+            </div>
+            <br><span>此订单已付款，多谢惠顾</span><br>
+            <span slot="footer" class="dialog-footer">
+                <el-button type="success" @click="SettleUpPage1 = false">确定</el-button>
+            </span>
+
+        </el-dialog>
+
+        <!--结算界面（2）-->
+        <el-dialog title="结算" :visible.sync="SettleUpPage2" width="90%" center>
+            <div class="title">
+                房间发票
+            </div>
+            <div class="main" style="height: 70px;">
+                <div class="main" style="width: 30px;height: 70px;float: left;text-align: center;">
+                    订房人
+                </div>
+                <div class="main" style="width: 500px;height: 70px;float: left;">
+                    姓名：{{ Customer.customerName}}<br><br>
+                    联系电话：{{Customer.customerTelephoneNumber}}
+                </div>
+                <div class="main" style="width: 30px;height: 70px;float: left;text-align: center;">
+                    发票号
+                </div>
+                <div style="height: 70px;float: left;line-height: 70px;font-size: 20px;">
+                    {{Deposit.order.orderId}}
+                </div>
+            </div>
+            <div class="main">
+                <table style="border: none;width: 100%;">
+                    <tr>
+                        <td>房间名</td>
+                        <td>单价（/天）</td>
+                        <td>总金额</td>
+                    </tr>
+                    <tr>
+                        <td>{{Deposit.Room.roomName}}</td>
+                        <td>{{Deposit.Room.roomPrice}}</td>
+                        <td>{{Deposit.depositPrice}}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="main" style="height: 70px;">
+                <div class="main" style="width: 30px;height: 70px;float: left;text-align: center;">
+                    销售方
+                </div>
+                <div class="main" style="width: 500px;height: 70px;float: left;">
+                    名称：南昌酒店<br>
+                    地址：南昌市丰和南大道696号<br>
+                    电话：15711111111
+                </div>
+                <div class="main" style="width: 30px;height: 70px;float: left;text-align: center;line-height: 35px;">
+                    备注
+                </div>
+            </div>
+           <br><span>请问您是否选择付款</span><br>
+            <span slot="footer" class="dialog-footer">
+                <el-button type="success" @click="payment">付款</el-button>
+                <el-button type="danger" @click="SettleUpPage2 = false">暂不付款</el-button>
+            </span>
+
+        </el-dialog>
+        <!--房间详情界面-->
+        <el-dialog title="房间详情" :visible.sync="RoomDetailtPage" width="30%" center>
+            <div class="demo-image__placeholder">
+                <div class="block" style="width: 400px">
+                    <el-image :src="src"></el-image>
+                    <div style="float: right">
+                        <span >房间名称:  {{RoomDetailt.Room.roomName}}</span><br><br>
+                        <span >发房间类型:  {{RoomDetailt.Room.roomType}}</span><br><br>
+                        <span >房间内设备：</span><br>
+                        <div v-for="(item,i) in RoomDetailt.Facilities">
+                            <span >{{i}}、{{item.facilityName}}</span><br>
+                        </div>
+
+                    </div>
+
+                </div><br>
+                <span slot="footer" class="dialog-footer">
+
+                <el-button type="success" @click="RoomDetailtPage = false">确定</el-button>
+            </span>
+            </div>
+
+
+        </el-dialog>
+    </div>
+    </div>
+    <script>
+        var Main = {
+            data() {
+                return {
+                    activeName: 'first',
+                    RoomDetailtPage:false,
+                    SettleUpPage1:false,//已结算提示
+                    SettleUpPage2:false,//付款提示
+                    dialogFormVisible: false,//订房页面开关
+                    FaultsRoomPage:false,//退房页面开关
+                    CRoomFormVisible:false,//换房页面开关
+                    evaluatePage:false,//客户写评价页面开关
+                    getevaluatePage:false,//显示评价页面
+                    RoomData: [], //客房数据集合
+                    MyRoomData:[],//预定客房集合
+                    MyOverOrder:[],//已经结束的订单
+                    EvaluateData:[],//评价数据列表
+                    Content:'',//评价内容
+                    Level:'',//评价等级
+                    sensitiveWords: ['ggg','共产党','垃圾','狗贼','差劲'],
+                    src: 'https://ss0.bdstatic.com/70cFvHSh_Q1YnxGkpoWK1HF6hhy/it/u=3602286726,333016854&fm=26&gp=0.jpg',
+
+                    RoomDetailt:{//房间细节
+                        Room:'',
+                        Facilities:[],
+                    },
+                    Deposit: {//账单信息
+                        order:'',
+                        Room:'',
+                        depositPrice:'',
+                        depositState:''
+                    },
+                    cost:'',//账单费用
+                    Customer:{//顾客信息
+                        customerId:'',
+                        customerName:'',
+                        customerTelephoneNumber:''
+                    },
+
+
+                    pagination: { //分页参数
+                        currentPage: 1,
+                        pageSize: 5,
+                        total: 0
+                    },
+                    searchChangeRoom:{//换房参数
+                        Oid:'',
+                        Rid:'',
+                    },
+                    FaultsRoom:{//退房参数
+                        Oid:'',
+                    },
+                    searchRoom: { //查询客房参数
+                        roomId:'',
+                        roomName:'',
+                        roomPrice:'',
+                        roomType: '',
+                        currentPage: 1,
+                        pageSize: 5
+                    },
+                    searchMyRoom:{//查询已预定客房参数
+                        customerId:''
+
+                    },
+                    searchSettleUp:{
+                        OrderId:''
+                    },
+                    book:{//订单信息
+                        customerId: '',
+                        roomId: '',
+                        begin_time:'',
+                        finish_time:'',
+                    },
+                    value1: [new Date(), new Date()],
+
+                    putevaluate:{//提交评价信息
+                        orderId:'',
+                        evaluateContent:'',
+                        evaluateLevel:'',
+                    },
+                    getevaluate:{
+                        roomId:'',
+                    }
+                }
+            },
+            mounted() {
+                this.getData(); //获取列表数据
+            },
+            methods: {
+                Detailt(room){
+                    this.RoomDetailt.Room=room;
+                    this.getevaluate.roomId=room.roomId;
+                    axios.get("facility?action=room_list", {params:this.getevaluate})
+                        .then((res)=>{
+                            console.log(res);
+                            this.RoomDetailt.Facilities=res.data.data;
+                        })
+                    this.RoomDetailtPage=true;
+
+                },
+
+                //付款
+                payment(){
+                    axios.get("deposit?action=Payment", {params: this.searchSettleUp})
+                        .then((res)=>{
+                            console.log(res);
+                            if(res.data.code===0){
+                                this.$notify({
+                                    title: '成功',
+                                    message: '付款成功！',
+                                    type: 'success'
+                                });
+                                //查询已结束订单
+                                this.getOverOrder()
+                            }
+                        })
+                    this.SettleUpPage2 = false;
+
+                },
+                //查询账单状况
+                SettleUp(Oid){
+                    this.searchSettleUp.OrderId=Oid;
+                    axios.get("deposit?action=GetOne", {params: this.searchSettleUp})
+                        .then((res)=>{
+                            console.log(res);
+                            this.Deposit=res.data.data;
+                            this.Deposit.Room=res.data.data.order.room;
+                            if(res.data.code===0&&res.data.data.depositState==="0"){
+                                this.SettleUpPage2=true;
+                            }else if(res.data.code===0&&res.data.data.depositState==="1"){
+                                this.SettleUpPage1=true;
+                            }
+
+                        })
+
+                },
+                //弹出退房提示页面
+                Faults(Oid){
+                    this.FaultsRoom.Oid=Oid;
+                    this.FaultsRoomPage=true;
+                },
+                //发送退房请求
+                PutFaults(){
+                    axios.get("order?action=Faults", {params: this.FaultsRoom})
+                        .then((res)=>{
+                            console.log(res);
+                            if(res.data.code===0){
+                                this.$notify({
+                                    title: '成功',
+                                    message: '退房成功！',
+                                    type: 'success'
+                                });
+                                //查询我的客房
+                                this.getMyRoom()
+                                //查询已结束订单
+                                this.getOverOrder()
+                            }
+
+                        })
+                    this.FaultsRoomPage=false;
+                },
+                //弹出显示评论界面
+                Getevaluate(roomId){
+                    this.getevaluate.roomId=roomId;
+                    this.EvaluateData.length=0;
+                    axios.get("evaluate?action=getevaluates", {params: this.getevaluate})
+                        .then((res)=>{
+                            var self = this;
+                            res.data.data.forEach(function (u) {
+                                (self.sensitiveWords || []).forEach(function (v) {
+                                    if(u.evaluateContent.indexOf(v) != -1) {
+                                        u.evaluateContent = '***';
+                                    }
+                                });
+                            });
+                            this.EvaluateData = res.data.data;
+                            console.log(this.EvaluateData)
+                        })
+                    this.getevaluatePage=true;
+                },
+
+                //弹出书写评价页面
+                WriteEvaluate(OrderId){
+                    this.Content='';
+                    this.Level='';
+                    this.putevaluate.orderId=OrderId;
+                    this.evaluatePage=true;
+                },
+                Putevaluate(){
+                    this.putevaluate.evaluateContent=this.Content;
+                    this.putevaluate.evaluateLevel=this.Level;
+                    axios.get("evaluate?action=putevaluate", {params: this.putevaluate})
+                        .then((res)=>{
+                            console.log(res);
+                            if(res.data.code===0){
+                                this.$notify({
+                                    title: '成功',
+                                    message: '评论成功！',
+                                    type: 'success'
+                                });
+                                alert("")
+                                //查询客房
+                                this.getAllRoom();
+                            }else{
+                                this.$notify.error({
+                                    title: '错误',
+                                    message: '评论失败!'
+                                });
+                            }
+                        })
+                    this.evaluatePage=false;
+
+                },
+
+                //弹出换房页面
+                Change(OrderId){
+                    this.searchChangeRoom.Oid=OrderId;
+                    this.CRoomFormVisible=true;
+                },
+                //换房操作
+                ChangeRoom(RoomId){
+                    this.searchChangeRoom.Rid=RoomId;
+                    console.log(this.searchChangeRoom);
+                    axios.get("order?action=ChangeRoom", {params: this.searchChangeRoom})
+                        .then((res)=>{
+                            console.log(res);
+                            if(res.data.code===0){
+                                this.$notify({
+                                    title: '成功',
+                                    message: '换房成功!',
+                                    type: 'success'
+                                });
+                                this.getMyRoom()
+                            }
+
+                        })
+                    this.CRoomFormVisible=false;
+                },
+                //弹出时间选择页面
+                Book(roomId) {
+                    this.book.roomId=roomId;
+                    this.dialogFormVisible = true;
+                },
+                //进行订房操作
+                bookroom(){
+                    this.book.customerId=this.Customer.customerId;
+
+                    this.book.begin_time=this.parseTime_1(this.value1[0]);
+                    this.book.finish_time=this.parseTime_1(this.value1[1]);
+                    axios.get("room?action=BookRoom", {params: this.book})
+                        .then((res)=>{
+                            console.log(res);
+                            if(res.data.code===0){
+                                this.$notify({
+                                    title: '成功',
+                                    message: '预定成功',
+                                    type: 'success'
+                                });
+                                //查询我的客房
+                                this.getMyRoom()
+
+                            }
+                        })
+                    this.dialogFormVisible = false
+                },
+                //更改时间格式(处理前端数据)
+                parseTime_1(d) {
+                    const newDate = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() + ' '
+                        + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+                    return newDate;
+                },
+                //更改时间格式（处理后台数据）
+                parseTime_2(d){
+                    var da = new Date(d)
+                    var year = da.getFullYear()+'年-';
+                    var month = da.getMonth()+1+'月-';
+                    var date = da.getDate()+'日';
+                    return year+month+date;
+                },
+               //获取自己的房间
+                getMyRoom(){
+
+                    this.searchMyRoom.customerId=this.Customer.customerId;
+                    axios.get("order?action=ExeOrder_list", {params: this.searchMyRoom})
+                        .then((res)=> {
+                            console.log(res);
+                            let result = res.data;//获取控制器回传的数据
+                            if(result.code === 0 && result.data != null){
+
+                                this.MyRoomData.length=0;
+                                this.MyRoomData = result.data;//绑定表格数据
+                                for(let i=0;i<this.MyRoomData.length;i++){
+                                    this.MyRoomData[i].beginTime=this.parseTime_2(this.MyRoomData[i].beginTime);
+                                    this.MyRoomData[i].overTime=this.parseTime_2(this.MyRoomData[i].overTime);
+                                }
+                            }
+                        })
+                },
+                getOverOrder(){
+
+                    this.searchMyRoom.customerId=this.Customer.customerId;
+                    axios.get("order?action=OverOrder_list", {params: this.searchMyRoom})
+                        .then((res)=> {
+                            console.log(res);
+                            let result = res.data;//获取控制器回传的数据
+                            if(result.code === 0 && result.data != null){
+
+                                this.MyOverOrder.length=0;
+                                this.MyOverOrder = result.data;//绑定表格数据
+                                for(let i=0;i<this.MyOverOrder.length;i++){
+                                    this.MyOverOrder[i].beginTime=this.parseTime_2(this.MyOverOrder[i].beginTime);
+                                    this.MyOverOrder[i].overTime=this.parseTime_2(this.MyOverOrder[i].overTime);
+                                }
+                            }
+                        })
+                },
+                getAllRoom(){
+                    //this.RoomData.length = 0; //清空数组（客房数据）
+                    this.RoomData = null; //清空数组（客房数据）
+                    this.searchRoom.currentPage = this.pagination.currentPage;
+                    this.searchRoom.pageSize = this.pagination.pageSize;
+                    axios.get("room?action=list", {params: this.searchRoom})
+                        .then((res)=> {
+                            console.log(res);
+                            let result = res.data;//获取控制器回传的数据
+                            if(result.code === 0 && result.data != null){
+                                //console.log(result)
+                                this.RoomData = result.data.data;//绑定表格数据
+                                this.pagination = result.data;//绑定分页参数
+                            }
+                        })
+                },
+
+                //获取房间数据
+                getData() {
+                    //查询客户
+                    this.Customer={};
+                    this.Customer.customerId=sessionStorage.getItem("customerid");
+                    axios.get("customer?action=getCustomer", {params: this.Customer})
+                    .then((res)=>{
+                        console.log(res);
+                        let result=res.data;
+                        this.Customer.customerId=result.data.customerId;
+                        this.Customer.customerName=result.data.customerName;
+                        this.Customer.customerTelephoneNumber=result.data.customerTelephoneNumber;
+                    })
+
+
+                    //查询客房
+                    this.getAllRoom()
+                    //查询我的客房
+                   this.getMyRoom()
+                    //查询已结束订单
+                   this.getOverOrder()
+                },
+                goback(){
+                    location.href = 'login.html';
+                }
+            }
+
+
+        };
+        setInterval("cg.innerHTML=new Date().toLocaleString()",1000)
+        let Ctor = Vue.extend(Main)
+        new Ctor().$mount('#app')
+    </script>
+</body>
+
+</html>

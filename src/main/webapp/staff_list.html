@@ -1,0 +1,365 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>员工信息管理</title>
+    <!-- 引入样式 -->
+    <!--<link rel="stylesheet" href="css/index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="js/vue.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/axios.js"></script>
+    <script src="js/qs.js"></script>
+    <!-- 引入自定义样式-->
+    <!--<link rel="stylesheet" href="css/staff_list.css">-->
+</head>
+<body>
+    <div id="app">
+
+        <!--<div style="border: 1px solid #eee; padding: 10px;">
+            <el-page-header @back="goBack" content="员工列表"></el-page-header>
+        </div>-->
+        <div style="margin: 10px 0;">
+
+            <el-input placeholder="员工编号" v-model="search.staffId" style="width: 19%">
+            </el-input>
+            <el-input placeholder="员工姓名" v-model="search.staffName" style="width: 19%">
+            </el-input>
+            <!--<el-input placeholder="员工密码" v-model="search.staffPassword">
+            </el-input>-->
+            <!--<el-input placeholder="员工职务" v-model="search.staffPosition">
+            </el-input>-->
+            <el-select class="" v-model="search.staffPosition" placeholder="请选择员工职务">
+                <el-option
+                        v-for="item in staffPositions"
+                        :key="item.value"
+                        :label="item.text"
+                        :value="item.value">
+                </el-option>
+            </el-select>
+            <el-select class="" v-model="search.onJob" placeholder="请选择员工在职状态">
+                <el-option
+                        v-for="item in onJobState"
+                        :key="item.value"
+                        :label="item.text"
+                        :value="item.value">
+                </el-option>
+            </el-select>
+            <el-button slot="append" icon="el-icon-search" @click="handleQuery">搜索</el-button>
+            <el-button slot="append" icon="el-icon-refresh-left" @click="handleReset">重置</el-button>
+        </div>
+        <template>
+            <el-table
+                    ref="multipleTable"
+                    :data="tableData"
+                    tooltip-effect="dark"
+                    @selection-change="handleSelectionChange"
+                    style="width: 100%"
+                    stripe>
+            <!--:height="58 + 48 * pagination.pageSize"-->
+                <el-table-column type="selection" width="55" fixed="left">
+
+                </el-table-column>
+                <el-table-column prop="staffId" label="编号" sortable>
+
+                </el-table-column>
+                <el-table-column prop="staffName" label="姓名">
+
+                </el-table-column>
+                <!--<el-table-column prop="staffPassword" label="密码" width="360px">-->
+
+                <!--</el-table-column>-->
+                <el-table-column prop="positionName" label="职务">
+
+                </el-table-column>
+                <el-table-column prop="onJobDescription" label="状态">
+
+                </el-table-column>
+                <el-table-column fixed="right" label="操作" width="200px">
+                    <template slot-scope="scope">
+                        <el-link type="primary" icon="el-icon-edit" @click="handleEdit(scope.row)">编辑</el-link>
+                        <el-link type="danger" icon="el-icon-delete" @click="dismiss(scope.row.staffId)">离职</el-link>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </template>
+        <template>
+            <div class="block">
+                <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="pagination.currentPage" :page-sizes="[3, 5, 10, 15, 20, 100]" :page-size="pagination.pageSize" layout="total, sizes, prev, pager, next, jumper" :total="pagination.total" background>
+                </el-pagination>
+                <div style="text-align: right; margin-right: 50px">
+                    <el-button type="primary" icon="el-icon-plus" @click="handleCreate" plain >添加员工</el-button>
+                    <el-button type="danger" icon="el-icon-delete" @click="dismissMany" plain>批量离职</el-button>
+                </div>
+            </div>
+        </template>
+
+        <template>
+            <el-dialog
+                    :visible.sync="dialogCreateVisible"
+                    :before-close="handleCloseCreateDialog">
+                <span slot="footer" class="dialog-footer">
+                    <iframe
+                            ref="dialogCreateFrame"
+                            src="staff_regist.html"
+                            frameborder="0"
+                            width="100%"
+                            height="350px">
+                    </iframe>
+                </span>
+            </el-dialog>
+        </template>
+
+        <template>
+            <el-dialog
+                    :visible.sync="dialogEditVisible"
+                    :before-close="handleCloseEditDialog">
+                <span slot="footer" class="dialog-footer">
+                    <iframe
+                            ref="dialogEditFrame"
+                            src="staff_edit.html"
+                            frameborder="0"
+                            width="100%"
+                            height="350px">
+                    </iframe>
+                </span>
+            </el-dialog>
+        </template>
+
+    </div>
+</body>
+<script>
+    let Main = {
+        data() {
+            return {
+                staffPositions: [], //职务集合
+                onJobState: [], //在职状态集合
+                types: [], //部门性质集合
+                dialogCreateVisible: false, //隐藏新建弹窗
+                dialogEditVisible: false, //隐藏编辑弹窗
+                tableData: [], //列表数据集合
+                multipleSelection: [], //已选择的行集合
+                array: [], //已选择的id集合
+                pagination: { //分页参数
+                    currentPage: 1,
+                    pageSize: 5,
+                    total: 0
+                },
+                search: { //查询参数
+                    staffId: '',
+                    staffName: '',
+                    staffPassword: '',
+                    staffPosition: '',
+                    onJob: 1,
+                    currentPage: 1,
+                    pageSize: 5
+                }
+            }
+        },
+
+        //初始化数据列表，挂载方法，页面加载完成后自动执行该方法
+        mounted() {
+            this.initStaffPositions();
+            this.initOnJobState();
+            //获取列表数据
+            this.getData();
+        },
+
+        methods: {
+            //初始化StaffPositions
+            initStaffPositions() {
+                axios.get("position?action=getAllPositions")
+                    .then((res)=> {
+                        if(res.data.code === 0) {
+                            this.staffPositions = res.data.data;
+                        }
+                    })
+            },
+
+            //初始化onJobState
+            initOnJobState() {
+                this.onJobState = [
+                    {
+                        text: '显示全部员工', value: null
+                    },
+                    {
+                        text: '显示在职员工', value: 1
+                    },
+                    {
+                        text: '显示离职员工', value: 0
+                    },
+                ]
+            },
+
+            //查询
+            handleQuery(){
+                this.getData();
+            },
+
+            //重置按钮
+            handleReset(){
+                this.search.staffId ='';
+                this.search.staffName = '';
+                //this.search.staffPassword = '';
+                this.search.staffPosition = '';
+            },
+
+            //页面大小改变事件
+            handleSizeChange(val) {
+                this.pagination.pageSize = val;
+                this.getData();
+            },
+            //当页面改变事件
+            handleCurrentChange(val) {
+                this.pagination.currentPage = val;
+                this.getData();
+            },
+
+            //多选选项改变事件
+            handleSelectionChange(val) {
+                this.multipleSelection = [];
+                val.forEach((currentVal)=> {
+                    let staffId = currentVal.staffId;
+                    this.multipleSelection.push(staffId);
+                })
+                //console.log(this.multipleSelection);
+            },
+
+            //获取列表参数
+            getData() {
+                /*if(this.tableData != null) {
+                    this.tableData.length = 0; //清空数组（表格数据）
+                }*/
+                this.tableData = null; //清空数组（表格数据）
+                //改变search对的当前和页面大小
+                this.search.currentPage = this.pagination.currentPage;
+                this.search.pageSize = this.pagination.pageSize;
+                axios.get("staff?action=list", {params: this.search})
+                    .then((res)=> {
+                        let result = res.data;//获取控制器回传的数据
+                        if(result.code === 0 && result.data != null){
+                            //console.log(result)
+                            this.tableData = result.data.data;//绑定表格数据
+                            this.pagination = result.data;//绑定分页参数
+                        }
+                    })
+            },
+
+            //新建事件
+            handleCreate() {
+                //打开弹窗
+                this.dialogCreateVisible = true;
+            },
+
+            //编辑事件
+            handleEdit(row) {
+                //打开弹窗
+                this.dialogEditVisible = true;
+                //获取iframe对象  .contentWindow属性获取对象页面的属性和方法
+                let iframe = this.$refs.dialogEditFrame;
+                //iframe.height = document.body.scrollHeight;
+                //向窗口传值
+                iframe.contentWindow.postMessage(row, '*');
+
+            },
+
+
+
+            //关闭新建弹窗
+            handleCloseCreateDialog() {
+                this.dialogCreateVisible = false;
+                this.getData();
+                //location.reload();
+            },
+
+            //关闭编辑弹窗
+            handleCloseEditDialog() {
+                this.dialogEditVisible = false;
+                this.getData();
+                //location.reload();
+            },
+
+            //开除员工
+            dismiss(staffId) {
+                this.$confirm('此操作将永久将该员工状态改为离职且不能恢复, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    axios.get("staff?action=dismiss", {params: {staffId: staffId}})
+                        .then((res)=> {
+                            let result = res.data;
+                            if(result.code === 0 && result.data != null) {
+                                console.log(result);
+                                this.getData();
+                                this.$notify({
+                                    title: '成功',
+                                    message: '此员工已离职',
+                                    type: 'success'
+                                });
+                            }
+                        })
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '本操作已取消'
+                    })
+                })
+            },
+
+            //批量开除员工
+            dismissMany: function () {
+                if (this.multipleSelection.length === 0) {
+                    //this.$alert('请选择要离职的员工')
+                    this.$alert('请选择要离职的员工', '提示', {
+                        confirmButtonText: '确定',
+                        callback: action => {
+                            parent.location.reload();
+                        }
+                    });
+                } else {
+                    this.$confirm('此操作将永久将这些员工状态改为离职且不能恢复, 是否继续?', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        axios.get("staff?action=dismissMany", {
+                            params: {multipleSelection: this.multipleSelection},
+                            paramsSerializer: params => {
+                                //return window.Qs.stringify(params, {arrayFormat: 'indices'})
+                                return window.Qs.stringify(params, { indices: false });
+                            }
+                        })
+                            .then((res) => {
+                                let result = res.data;
+                                if (result.code === 0 && result.data != null) {
+                                    console.log(result);
+                                    this.getData();
+                                    this.$notify({
+                                        title: '成功',
+                                        message: '批量操作成功',
+                                        type: 'success'
+                                    });
+                                }
+                            })
+                    }).catch(() => {
+                        this.$message({
+                            type: 'info',
+                            message: '本操作已取消'
+                        })
+                    })
+                }
+            },
+
+
+            // //退回上一页面
+            // goBack() {
+            //     window.history.back();
+            // },
+        }
+    }
+    let Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>理财</title>
+    <!-- 引入样式 -->
+    <!--<link rel="stylesheet" href="css/index.css">-->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="js/vue.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/axios.js"></script>
+    <script src="js/qs.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!--<div style="border: 1px solid #eee; padding: 10px;">
+            <el-page-header @back="goBack" content="理赔管理"></el-page-header>
+        </div>-->
+        <div style="margin: 10px 0;">
+        <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+            <el-form-item label="编号" prop="id">
+                <el-input v-model="ruleForm.id"></el-input>
+            </el-form-item>
+            <el-form-item label="事件" prop="event">
+                <el-input v-model="ruleForm.event"></el-input>
+            </el-form-item>
+            <el-form-item label="时间" prop="time">
+                <el-input v-model="ruleForm.time"></el-input>
+            </el-form-item>
+            <el-form-item label="备注" prop="remark">
+                <el-input v-model="ruleForm.remark"></el-input>
+            </el-form-item>
+            <el-form-item size="large">
+                <el-button type="primary" @click="onSubmit('ruleForm')">确定</el-button>
+            </el-form-item>
+        </el-form>
+        </div>
+    </div>
+
+</body>
+</html>
+<script>
+    var Main = {
+		data() {
+			//自定义数据校验：判断部门名称是否已存在
+			var checkDeptName = (rule, value, callback) => {
+				/*axios.get('isExist', {
+					params: {
+						'deptName': value,
+
+					}
+				}).then(resp => {
+					if(resp.data.code == 401) {
+						callback(new Error(value + '部门已经存在!'));
+					} else if(resp.data.code == 500) {
+						location.href = '../error.html';
+					}
+					callback();
+				})*/
+			};
+			return {
+				types: [], //部门类型集合
+				ruleForm: {
+					id: '',
+					deptName: '',
+					type: ''
+				},
+
+				rules: {
+					deptName: [{
+							required: true,
+							message: '请输入部门名称',
+							trigger: 'blur'
+						},
+						{
+							min: 2,
+							max: 16,
+							message: '部门名称长度在 2到 16个字符',
+							trigger: 'blur'
+						},
+						{
+							pattern: '^[0-9A-z\u4e00-\u9fa5]{2,16}$',
+							message: '部门名称由字母、数字和中文字符组成',
+							trigger: 'blur'
+						},
+						{
+							validator: checkDeptName,
+							trigger: 'blur'
+						}
+					],
+					type: [{
+						required: true,
+						message: '请选择部门性质',
+						trigger: 'change'
+					}],
+				},
+				err: {
+					messages: []
+				}
+			};
+		},
+		mounted() {
+			//初始化类型
+			this.initType();
+			// 窗口监听：接受父页面发来的信息
+			window.addEventListener('message', (event) => {
+				this.ruleForm = event.data;　
+			})　　　
+		},
+
+		methods: {
+			initType() {
+				this.types = {
+					'1': '学生',
+					'2': '老师',
+					'3': '其它'
+				};
+			},
+			onSubmit(formName) {
+
+				this.$refs[formName].validate((valid) => {
+					if(valid) {
+						this.postData(); //提交数据
+					}
+					return false;
+				});
+			},
+			postData() {
+				/*axios.post('save', this.ruleForm)
+					.then(resp => {
+						if(resp.data.code == 400) {
+							this.err.messages.length = 0; //清空数组
+							for(let i = 0; i < resp.data.data.length; i++) {
+								this.err.messages.push(resp.data.data[i].defaultMessage);
+							}
+						} else if(resp.data.code == 0) {
+							this.$alert('数据编辑成功', '提示', {
+								confirmButtonText: '确定',
+								callback: action => {
+									parent.location.reload();
+								}
+							});
+						} else {
+							location.href = '../error.html';
+						}
+					}).catch(() => {
+						location.href = '../error.html';
+					});
+				//延时加载
+				this.loading();*/
+			},
+			////延时加载
+			loading() {
+				const loading = this.$loading({
+					lock: true,
+					text: '数据处理中',
+					spinner: 'el-icon-loading',
+					background: 'rgba(0, 0, 0, 0.7)'
+				});
+				setTimeout(() => {
+					loading.close();
+				}, 1000);
+			},
+		}
+	};
+	var Ctor = Vue.extend(Main)
+	new Ctor().$mount('#app')
+</script>

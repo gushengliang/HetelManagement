@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qs/6.9.4/qs.min.js"></script>
+
+</head>
+
+<body>
+<div id="app">
+
+    <template>
+        <el-form :model="ruleForm" status-icon :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm" style=" width: 50% !important;
+    margin: 0 auto;">
+            <div style="clear: both;margin: 10px;">
+                <i  v-if="msg" class="el-icon-error" style="color: #F56C6C;margin-left: 100px;">{{msg}}</i>
+            </div>
+            <el-form-item label="用户名" prop="username">
+                <el-input type="text" v-model="ruleForm.username" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="密码" prop="password">
+                <el-input type="password" v-model="ruleForm.password" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="submitForm('ruleForm')">登录</el-button>
+                <el-button @click="resetForm('ruleForm')">重置</el-button>
+            </el-form-item>
+        </el-form>
+    </template>
+</div>
+</body>
+
+</html>
+<script>
+    var Main = {
+        data() {
+            return {
+                msg:'',
+                ruleForm: {
+                    username: '',
+                    password: ''
+                }, //登录 和密码
+                rules: {
+                    username: [{
+                        required: true,
+                        message: '请输入用户名',
+                        trigger: 'blur'
+                    }],
+                    password: [{
+                        required: true,
+                        message: '请输入密码',
+                        trigger: 'blur'
+                    }]
+                }
+            };
+        },
+        mounted() {
+            this.msg=window.sessionStorage.getItem("msg");
+        },
+        methods: {
+            submitForm(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if(valid) {
+                        //实现登录
+                        this.login();
+
+                    } else {
+                        return false;
+                    }
+                });
+            },
+            //重置
+            resetForm(formName) {
+                this.$refs[formName].resetFields();
+            },
+            //登录
+            login(){
+                axios.get('index?action=login',{params:this.ruleForm})
+                    .then(resp=>{
+                        if(resp.data.code===0){
+                            window.sessionStorage.removeItem("msg");//移除错误信息
+                            location.href='index.html';
+                        }else{
+                            //设置错误信息
+                            window.sessionStorage.setItem("msg",resp.data.msg);
+                            location.href='login.html';
+                        }
+                    })
+            }
+        }
+    };
+    var Ctor = Vue.extend(Main)
+    new Ctor().$mount('#app')
+</script>

@@ -1,0 +1,39 @@
+.app {
+    margin: 15% 15% 15% 15%;
+}
+
+.el-header {
+    background-color: #2577E3;
+    color: #FFFFFF;
+    text-align: center;
+    line-height: 70px;
+    height:200px
+}
+.el-footer {
+    background-color: #eeeeee;
+    color: #000000;
+    text-align: right;
+    line-height: 60px;
+}
+
+.el-aside,
+.el-menu {
+    background-color: #FFFFFF;
+    color: #333;
+    text-align: center;
+    /*height: 671px;*/
+}
+
+.el-main {
+    background-color: #F6F6F6;
+    color: #333;
+    /*height: 617px;*/
+}
+body>.el-container {
+    /*margin-bottom: 40px;*/
+    /*height: 100%;*/
+}
+/*
+.el-tabs--border-card {
+    height: 567px;
+}*/
